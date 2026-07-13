@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pm-agent · painel</title>
+<style>
+  :root {
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --blue: #2a78d6;
+    --aqua: #1baf7a;
+    --yellow: #eda100;
+    --green: #008300;
+    --violet: #4a3aa7;
+    --red: #e34948;
+    --good: #0ca30c;
+    --accent: var(--blue);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --blue: #3987e5;
+      --aqua: #199e70;
+      --yellow: #c98500;
+      --green: #008300;
+      --violet: #9085e9;
+      --red: #e66767;
+      --good: #0ca30c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 14px 20px; border-bottom: 1px solid var(--grid);
+    position: sticky; top: 0; background: var(--page); z-index: 10;
+  }
+  header h1 { font-size: 16px; margin: 0; font-weight: 650; }
+  header h1 span { color: var(--muted); font-weight: 400; }
+  nav { display: flex; gap: 4px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+  nav button {
+    border: 0; background: transparent; color: var(--ink-2); font: inherit;
+    padding: 6px 14px; border-radius: 8px; cursor: pointer;
+  }
+  nav button.active { background: var(--accent); color: #fff; }
+  nav button:not(.active):hover { background: var(--grid); }
+  #meta { margin-left: auto; color: var(--muted); font-size: 12px; }
+  main { padding: 20px; }
+
+  .board { display: flex; gap: 14px; overflow-x: auto; align-items: flex-start; padding-bottom: 12px; }
+  .col { min-width: 260px; width: 260px; flex: none; }
+  .col-head { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .col-head b { font-size: 13px; font-weight: 600; }
+  .col-head .count { color: var(--muted); font-size: 12px; margin-left: auto; }
+  .col-body { display: flex; flex-direction: column; gap: 10px; min-height: 60px; border-radius: 12px; }
+  .col-body.dragover { outline: 2px dashed var(--accent); outline-offset: 4px; }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px 14px; cursor: grab; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .card:active { cursor: grabbing; }
+  .card h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+  .card .sub { color: var(--muted); font-size: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .prazo-chip { color: var(--ink-2); }
+  .prazo-chip.overdue { color: var(--red); font-weight: 600; }
+  .progress { height: 4px; background: var(--grid); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  .progress i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+  .bigcard { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .bigcard h3 { margin: 0; font-size: 15px; }
+  .bigcard .top { display: flex; align-items: flex-start; gap: 10px; justify-content: space-between; margin-bottom: 8px; }
+  .status-chip {
+    font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px;
+    color: #fff; white-space: nowrap; flex: none;
+  }
+  .steps { margin: 10px 0 0; padding: 0; list-style: none; }
+  .steps li { display: flex; gap: 8px; align-items: flex-start; padding: 3px 0; color: var(--ink-2); }
+  .steps input { margin-top: 3px; accent-color: var(--good); cursor: pointer; }
+  .steps li.done { color: var(--muted); text-decoration: line-through; }
+  .notas { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--grid); color: var(--muted); font-size: 12px; white-space: pre-wrap; }
+
+  .agenda-wrap { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .agenda-wrap { grid-template-columns: 1fr; } }
+  .cal { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-head b { font-size: 15px; text-transform: capitalize; }
+  .cal-head button { border: 1px solid var(--border); background: transparent; color: var(--ink); border-radius: 8px; padding: 4px 12px; cursor: pointer; font: inherit; }
+  .cal-head button:hover { background: var(--grid); }
+  .cal-month-events { margin-bottom: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .month-ev { font-size: 12px; padding: 6px 10px; border-radius: 8px; background: color-mix(in srgb, var(--yellow) 14%, var(--surface-1)); border: 1px solid color-mix(in srgb, var(--yellow) 40%, transparent); }
+  .cal table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  .cal th { color: var(--muted); font-weight: 500; font-size: 11px; padding: 4px; text-transform: uppercase; }
+  .cal td { border: 1px solid var(--grid); height: 74px; vertical-align: top; padding: 4px 6px; font-size: 12px; }
+  .cal td .d { color: var(--muted); }
+  .cal td.today { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .cal td.today .d { color: var(--accent); font-weight: 700; }
+  .cal td.other { background: color-mix(in srgb, var(--page) 60%, var(--surface-1)); }
+  .cal-ev { margin-top: 3px; padding: 2px 6px; border-radius: 6px; color: #fff; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .upcoming { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+  .upcoming h3 { margin: 0 0 10px; font-size: 14px; }
+  .up-item { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--grid); align-items: baseline; }
+  .up-item:first-of-type { border-top: 0; }
+  .up-date { font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 12px; white-space: nowrap; min-width: 80px; }
+  .up-none { color: var(--muted); }
+
+  .gantt-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 16px; overflow-x: auto; }
+  .gantt-note { color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+  svg text { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); }
+  svg .rowlabel { fill: var(--ink); font-size: 12.5px; font-weight: 550; }
+  svg .rowsub { fill: var(--muted); font-size: 10.5px; }
+  .empty { color: var(--muted); padding: 40px; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>pm-agent <span>· painel de projetos</span></h1>
+  <nav id="nav">
+    <button data-view="kanban" class="active">Kanban</button>
+    <button data-view="cards">Cards</button>
+    <button data-view="agenda">Agenda</button>
+    <button data-view="gantt">Gantt</button>
+  </nav>
+  <div id="meta"></div>
+</header>
+<main id="main"></main>
+
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const API = 'https://iucqufccyboilasswnun.supabase.co/functions/v1/dashboard';
+let KEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('pm_key') || '';
+if (new URLSearchParams(location.search).get('key')) {
+  localStorage.setItem('pm_key', KEY);
+  history.replaceState(null, '', location.pathname); // tira a chave da URL
+}
+let TASKS = [];
+let VIEW = 'kanban';
+let CAL = (() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; })();
+
+const STATUS = [
+  { key: 'a fazer',             color: 'var(--violet)' },
+  { key: 'em andamento',        color: 'var(--blue)' },
+  { key: 'a verificar',         color: 'var(--yellow)' },
+  { key: 'aguardando detalhes', color: 'var(--aqua)' },
+  { key: 'concluído',           color: 'var(--good)' },
+  { key: 'mesclado',            color: 'var(--muted)' },
+];
+const statusColor = (s) => (STATUS.find((x) => x.key === s) || { color: 'var(--muted)' }).color;
+
+const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const fmtDate = (iso) => { const [y, m, d] = iso.split('-'); return `${Number(d)}/${MESES[Number(m) - 1]}`; };
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+function prazoChip(t) {
+  if (t.prazo.date) {
+    const over = t.prazo.date < todayISO() && !['concluído', 'mesclado'].includes(t.status);
+    return `<span class="prazo-chip ${over ? 'overdue' : ''}">⏱ ${fmtDate(t.prazo.date)}${over ? ' (atrasado)' : ''}</span>`;
+  }
+  if (t.prazo.month) { const [y, m] = t.prazo.month.split('-'); return `<span class="prazo-chip">⏱ ${MESES[Number(m) - 1]}/${y}</span>`; }
+  if (t.prazo.raw) return `<span class="prazo-chip">⏱ ${t.prazo.raw}</span>`;
+  return `<span class="prazo-chip" style="color:var(--muted)">sem prazo</span>`;
+}
+const progress = (t) => {
+  const total = t.steps.length, done = t.steps.filter((s) => s.done).length;
+  return { total, done, pct: total ? Math.round((100 * done) / total) : 0 };
+};
+
+async function api(path, opts) {
+  const res = await fetch(`${API}${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(KEY)}`, opts);
+  if (res.status === 401) {
+    localStorage.removeItem('pm_key');
+    KEY = prompt('Chave de acesso do painel:') || '';
+    if (KEY) { localStorage.setItem('pm_key', KEY); return api(path, opts); }
+    throw new Error('sem chave');
+  }
+  return res.json();
+}
+
+async function load() {
+  TASKS = await api('/api/tasks');
+  TASKS.sort((a, b) => a.title.localeCompare(b.title, 'pt'));
+  $('#meta').textContent = `${TASKS.length} projetos · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  render();
+}
+
+function render() {
+  const main = $('#main');
+  document.querySelectorAll('#nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === VIEW));
+  if (!TASKS.length) { main.innerHTML = '<div class="empty">Nenhum projeto ainda.</div>'; return; }
+  if (VIEW === 'kanban') renderKanban(main);
+  else if (VIEW === 'cards') renderCards(main);
+  else if (VIEW === 'agenda') renderAgenda(main);
+  else renderGantt(main);
+}
+
+/* ================= kanban ================= */
+function renderKanban(main) {
+  const known = STATUS.map((s) => s.key);
+  const extras = [...new Set(TASKS.map((t) => t.status))].filter((s) => !known.includes(s));
+  const cols = [...STATUS.map((s) => s.key), ...extras];
+  main.innerHTML = `<div class="board">` + cols.map((st) => {
+    const items = TASKS.filter((t) => t.status === st);
+    if (!items.length && !['em andamento', 'a verificar', 'aguardando detalhes', 'concluído'].includes(st)) return '';
+    return `<div class="col">
+      <div class="col-head"><span class="dot" style="background:${statusColor(st)}"></span><b>${st}</b><span class="count">${items.length}</span></div>
+      <div class="col-body" data-status="${st}">${items.map(cardHTML).join('')}</div>
+    </div>`;
+  }).join('') + `</div>`;
+
+  main.querySelectorAll('.card').forEach((el) => {
+    el.draggable = true;
+    el.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', el.dataset.id));
+  });
+  main.querySelectorAll('.col-body').forEach((col) => {
+    col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('dragover'); });
+    col.addEventListener('dragleave', () => col.classList.remove('dragover'));
+    col.addEventListener('drop', async (e) => {
+      e.preventDefault(); col.classList.remove('dragover');
+      const id = e.dataTransfer.getData('text/plain');
+      await api('/api/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: id, status: col.dataset.status }) });
+      load();
+    });
+  });
+}
+function cardHTML(t) {
+  const p = progress(t);
+  return `<div class="card" data-id="${t.id}">
+    <h3>${t.title}</h3>
+    <div class="sub">${prazoChip(t)}${p.total ? `<span>${p.done}/${p.total} passos</span>` : ''}</div>
+    ${p.total ? `<div class="progress"><i style="width:${p.pct}%;background:${statusColor(t.status)}"></i></div>` : ''}
+  </div>`;
+}
+
+/* ================= cards ================= */
+function renderCards(main) {
+  main.innerHTML = `<div class="grid">` + TASKS.map((t) => `
+    <div class="bigcard">
+      <div class="top"><h3>${t.title}</h3><span class="status-chip" style="background:${statusColor(t.status)}">${t.status}</span></div>
+      <div class="sub" style="color:var(--muted);font-size:12px">${prazoChip(t)}</div>
+      <ul class="steps">${t.steps.map((s) => `
+        <li class="${s.done ? 'done' : ''}"><input type="checkbox" ${s.done ? 'checked' : ''} data-step="${s.id}"><span>${s.label}</span></li>`).join('')}
+      </ul>
+      ${t.notas ? `<div class="notas">${t.notas.replace(/^- /gm, '• ')}</div>` : ''}
+    </div>`).join('') + `</div>`;
+  main.querySelectorAll('.steps input').forEach((cb) => {
+    cb.addEventListener('change', async () => {
+      await api('/api/step', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: Number(cb.dataset.step), done: cb.checked }) });
+      load();
+    });
+  });
+}
+
+/* ================= agenda ================= */
+function renderAgenda(main) {
+  const { y, m } = CAL;
+  const first = new Date(y, m, 1);
+  const startDow = first.getDay();
+  const daysIn = new Date(y, m + 1, 0).getDate();
+  const monthKey = `${y}-${String(m + 1).padStart(2, '0')}`;
+  const byDate = {};
+  for (const t of TASKS) if (t.prazo.date) (byDate[t.prazo.date] ??= []).push(t);
+  const monthEvs = TASKS.filter((t) => t.prazo.month === monthKey);
+  const today = todayISO();
+
+  let cells = '';
+  for (let i = 0; i < 42; i++) {
+    const dnum = i - startDow + 1;
+    if (dnum < 1 || dnum > daysIn) { cells += `<td class="other"></td>`; if (i % 7 === 6) cells += '</tr><tr>'; continue; }
+    const iso = `${monthKey}-${String(dnum).padStart(2, '0')}`;
+    const evs = (byDate[iso] || []).map((t) => `<div class="cal-ev" style="background:${statusColor(t.status)}" title="${t.title}">${t.title}</div>`).join('');
+    cells += `<td class="${iso === today ? 'today' : ''}"><span class="d">${dnum}</span>${evs}</td>`;
+    if (i % 7 === 6) cells += '</tr><tr>';
+  }
+
+  const dated = TASKS.filter((t) => t.prazo.date && t.prazo.date >= today).sort((a, b) => a.prazo.date.localeCompare(b.prazo.date));
+  const monthly = TASKS.filter((t) => t.prazo.month && t.prazo.month >= today.slice(0, 7)).sort((a, b) => a.prazo.month.localeCompare(b.prazo.month));
+  const noPrazo = TASKS.filter((t) => !t.prazo.date && !t.prazo.month && !['concluído', 'mesclado'].includes(t.status));
+
+  main.innerHTML = `<div class="agenda-wrap">
+    <div class="cal">
+      <div class="cal-head">
+        <button id="prev">‹</button>
+        <b>${first.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</b>
+        <button id="next">›</button>
+      </div>
+      <div class="cal-month-events">${monthEvs.map((t) => `<div class="month-ev">📌 <b>${t.title}</b> — prazo em ${MESES[m]}/${y} (sem data exata)</div>`).join('')}</div>
+      <table><tr><th>dom</th><th>seg</th><th>ter</th><th>qua</th><th>qui</th><th>sex</th><th>sáb</th></tr><tr>${cells}</tr></table>
+    </div>
+    <div class="upcoming">
+      <h3>Próximos prazos</h3>
+      ${dated.map((t) => `<div class="up-item"><span class="up-date">${fmtDate(t.prazo.date)}</span><span>${t.title}</span></div>`).join('')}
+      ${monthly.map((t) => { const [yy, mm] = t.prazo.month.split('-'); return `<div class="up-item"><span class="up-date">${MESES[Number(mm) - 1]}/${yy}</span><span>${t.title} <span style="color:var(--muted)">(mês)</span></span></div>`; }).join('')}
+      ${!dated.length && !monthly.length ? '<div class="up-none">Nenhum prazo definido.</div>' : ''}
+      ${noPrazo.length ? `<h3 style="margin-top:16px">Sem prazo</h3>${noPrazo.map((t) => `<div class="up-item"><span class="up-date">—</span><span>${t.title}</span></div>`).join('')}` : ''}
+    </div>
+  </div>`;
+  $('#prev').onclick = () => { CAL.m--; if (CAL.m < 0) { CAL.m = 11; CAL.y--; } render(); };
+  $('#next').onclick = () => { CAL.m++; if (CAL.m > 11) { CAL.m = 0; CAL.y++; } render(); };
+}
+
+/* ================= gantt ================= */
+function renderGantt(main) {
+  const rows = TASKS.filter((t) => !['mesclado'].includes(t.status));
+  const today = new Date(todayISO());
+  const D = 86400000;
+  const ends = rows.map((t) => {
+    if (t.prazo.date) return new Date(t.prazo.date);
+    if (t.prazo.month) { const [y, m] = t.prazo.month.split('-').map(Number); return new Date(y, m, 0); }
+    return null;
+  });
+  const starts = rows.map((t) => new Date(t.start));
+  let min = new Date(Math.min(...starts, today));
+  let max = new Date(Math.max(...ends.filter(Boolean).map(Number), Number(today) + 21 * D));
+  min = new Date(min.getFullYear(), min.getMonth(), 1);
+  max = new Date(max.getFullYear(), max.getMonth() + 1, 1);
+
+  const LEFT = 210, RW = 26, TOP = 34, W = LEFT + Math.max(560, Math.min(1100, ((max - min) / D) * 6)) + 20;
+  const span = max - min;
+  const x = (d) => LEFT + ((d - min) / span) * (W - LEFT - 20);
+  const H = TOP + rows.length * (RW + 12) + 16;
+
+  let months = '';
+  for (let d = new Date(min); d < max; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+    months += `<line x1="${x(d)}" y1="${TOP - 8}" x2="${x(d)}" y2="${H - 10}" stroke="var(--grid)"/>` +
+      `<text x="${x(d) + 4}" y="${TOP - 12}">${MESES[d.getMonth()]}/${String(d.getFullYear()).slice(2)}</text>`;
+  }
+
+  const bars = rows.map((t, i) => {
+    const yPos = TOP + i * (RW + 12);
+    const s = x(starts[i]);
+    const end = ends[i];
+    const color = statusColor(t.status).replace('var(--muted)', 'var(--baseline)');
+    const p = progress(t);
+    const label = `<text class="rowlabel" x="0" y="${yPos + 13}">${t.title.length > 26 ? t.title.slice(0, 25) + '…' : t.title}</text>` +
+      `<text class="rowsub" x="0" y="${yPos + 25}">${t.status}${p.total ? ` · ${p.done}/${p.total}` : ''}</text>`;
+    if (end) {
+      const e = Math.max(x(end), s + 8);
+      const monthOnly = !t.prazo.date;
+      return label +
+        `<rect x="${s}" y="${yPos + 4}" width="${e - s}" height="${RW - 8}" rx="4" fill="${color}" ${monthOnly ? 'opacity="0.45"' : 'opacity="0.9"'}>
+           <title>${t.title} — ${fmtDate(starts[i].toISOString().slice(0,10))} até ${monthOnly ? 'fim de ' + MESES[end.getMonth()] : fmtDate(end.toISOString().slice(0,10))}</title>
+         </rect>` +
+        (p.total ? `<rect x="${s}" y="${yPos + 4}" width="${(e - s) * p.pct / 100}" height="${RW - 8}" rx="4" fill="${color}"/>` : '');
+    }
+    const e = x(today);
+    return label +
+      `<rect x="${s}" y="${yPos + 4}" width="${Math.max(e - s, 8)}" height="${RW - 8}" rx="4" fill="${color}" opacity="0.9"><title>${t.title} — sem prazo definido</title></rect>` +
+      `<line x1="${e + 2}" y1="${yPos + RW / 2}" x2="${e + 40}" y2="${yPos + RW / 2}" stroke="${color}" stroke-width="2" stroke-dasharray="3 4"/>`;
+  }).join('');
+
+  main.innerHTML = `<div class="gantt-card">
+    <p class="gantt-note">Barra sólida = prazo definido · translúcida = prazo só de mês · tracejada = sem prazo (em aberto). Início = data do primeiro passo registrado.</p>
+    <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+      ${months}
+      <line x1="${x(today)}" y1="${TOP - 8}" x2="${x(today)}" y2="${H - 10}" stroke="var(--red)" stroke-width="1.5"/>
+      <text x="${x(today) + 4}" y="${H - 2}" fill="var(--red)">hoje</text>
+      ${bars}
+    </svg>
+  </div>`;
+}
+
+$('#nav').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  VIEW = b.dataset.view; render();
+});
+load();
+setInterval(load, 15000); // acompanha edições feitas pelo bot do Telegram
+</script>
+</body>
+</html>
