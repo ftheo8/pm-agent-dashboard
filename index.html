@@ -48,7 +48,7 @@
     font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   header {
-    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     padding: 14px 20px; border-bottom: 1px solid var(--grid);
     position: sticky; top: 0; background: var(--page); z-index: 10;
   }
@@ -61,6 +61,15 @@
   }
   nav button.active { background: var(--accent); color: #fff; }
   nav button:not(.active):hover { background: var(--grid); }
+  .btn {
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--ink);
+    font: inherit; padding: 6px 14px; border-radius: 9px; cursor: pointer;
+  }
+  .btn:hover { background: var(--grid); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 40%, transparent); }
+  .btn.small { padding: 3px 10px; font-size: 12px; border-radius: 7px; }
+  label.toggle { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; cursor: pointer; user-select: none; }
   #meta { margin-left: auto; color: var(--muted); font-size: 12px; }
   main { padding: 20px; }
 
@@ -75,18 +84,19 @@
 
   .card {
     background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
-    padding: 12px 14px; cursor: grab; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    padding: 12px 14px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04);
   }
-  .card:active { cursor: grabbing; }
   .card h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
-  .card .sub { color: var(--muted); font-size: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .card .sub { color: var(--muted); font-size: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .prazo-chip { color: var(--ink-2); }
   .prazo-chip.overdue { color: var(--red); font-weight: 600; }
+  .clip { color: var(--muted); }
   .progress { height: 4px; background: var(--grid); border-radius: 2px; margin-top: 10px; overflow: hidden; }
   .progress i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+  .arch-badge { font-size: 10px; font-weight: 700; letter-spacing: .4px; color: var(--muted); border: 1px solid var(--grid); border-radius: 5px; padding: 1px 6px; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
-  .bigcard { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .bigcard { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; cursor: pointer; }
   .bigcard h3 { margin: 0; font-size: 15px; }
   .bigcard .top { display: flex; align-items: flex-start; gap: 10px; justify-content: space-between; margin-bottom: 8px; }
   .status-chip {
@@ -95,8 +105,8 @@
   }
   .steps { margin: 10px 0 0; padding: 0; list-style: none; }
   .steps li { display: flex; gap: 8px; align-items: flex-start; padding: 3px 0; color: var(--ink-2); }
-  .steps input { margin-top: 3px; accent-color: var(--good); cursor: pointer; }
-  .steps li.done { color: var(--muted); text-decoration: line-through; }
+  .steps input[type=checkbox] { margin-top: 3px; accent-color: var(--good); cursor: pointer; }
+  .steps li.done > span { color: var(--muted); text-decoration: line-through; }
   .notas { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--grid); color: var(--muted); font-size: 12px; white-space: pre-wrap; }
 
   .agenda-wrap { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 20px; align-items: start; }
@@ -115,7 +125,7 @@
   .cal td.today { outline: 2px solid var(--accent); outline-offset: -2px; }
   .cal td.today .d { color: var(--accent); font-weight: 700; }
   .cal td.other { background: color-mix(in srgb, var(--page) 60%, var(--surface-1)); }
-  .cal-ev { margin-top: 3px; padding: 2px 6px; border-radius: 6px; color: #fff; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cal-ev { margin-top: 3px; padding: 2px 6px; border-radius: 6px; color: #fff; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
   .upcoming { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
   .upcoming h3 { margin: 0 0 10px; font-size: 14px; }
   .up-item { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--grid); align-items: baseline; }
@@ -129,6 +139,44 @@
   svg .rowlabel { fill: var(--ink); font-size: 12.5px; font-weight: 550; }
   svg .rowsub { fill: var(--muted); font-size: 10.5px; }
   .empty { color: var(--muted); padding: 40px; text-align: center; }
+
+  /* ---------- modal ---------- */
+  #overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50;
+    display: none; align-items: flex-start; justify-content: center; padding: 4vh 16px;
+  }
+  #overlay.open { display: flex; }
+  #modal {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px;
+    width: 640px; max-width: 100%; max-height: 92vh; overflow-y: auto; padding: 22px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+  }
+  #modal h2 { margin: 0 0 4px; font-size: 17px; }
+  .m-close { float: right; border: 0; background: transparent; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1; padding: 2px 6px; }
+  .m-close:hover { color: var(--ink); }
+  .m-sec { margin-top: 18px; }
+  .m-sec > h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  .m-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+  .m-row label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 3px; }
+  input[type=text], input[type=date], input[type=month], input[type=datetime-local], input[type=number], select, textarea {
+    font: inherit; color: var(--ink); background: var(--page);
+    border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px;
+  }
+  textarea { width: 100%; min-height: 84px; resize: vertical; }
+  .field { flex: 1; min-width: 130px; }
+  .field input, .field select { width: 100%; }
+  .m-list { list-style: none; margin: 0; padding: 0; }
+  .m-list li { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--grid); }
+  .m-list li:last-child { border-bottom: 0; }
+  .m-list .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .m-list .dim { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  .icon-btn { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 6px; }
+  .icon-btn:hover { color: var(--red); background: var(--grid); }
+  .att-link { color: var(--accent); cursor: pointer; text-decoration: none; }
+  .att-link:hover { text-decoration: underline; }
+  .m-footer { display: flex; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--grid); flex-wrap: wrap; }
+  .m-footer .spacer { flex: 1; }
+  .muted-note { color: var(--muted); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -140,9 +188,13 @@
     <button data-view="agenda">Agenda</button>
     <button data-view="gantt">Gantt</button>
   </nav>
+  <button class="btn primary" id="btn-new">+ Novo</button>
+  <label class="toggle"><input type="checkbox" id="show-arch"> arquivados</label>
   <div id="meta"></div>
 </header>
 <main id="main"></main>
+
+<div id="overlay"><div id="modal"></div></div>
 
 <script>
 const $ = (s, el = document) => el.querySelector(s);
@@ -154,6 +206,9 @@ if (new URLSearchParams(location.search).get('key')) {
 }
 let TASKS = [];
 let VIEW = 'kanban';
+let SHOW_ARCH = false;
+let MODAL_SLUG = null; // slug aberto no modal; '' = criando novo
+let DRAGGING = false;
 let CAL = (() => { const n = new Date(); return { y: n.getFullYear(), m: n.getMonth() }; })();
 
 const STATUS = [
@@ -168,7 +223,10 @@ const statusColor = (s) => (STATUS.find((x) => x.key === s) || { color: 'var(--m
 
 const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const fmtDate = (iso) => { const [y, m, d] = iso.split('-'); return `${Number(d)}/${MESES[Number(m) - 1]}`; };
+const fmtDateTime = (iso) => new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 const todayISO = () => new Date().toISOString().slice(0, 10);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtSize = (b) => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
 
 function prazoChip(t) {
   if (t.prazo.date) {
@@ -176,13 +234,15 @@ function prazoChip(t) {
     return `<span class="prazo-chip ${over ? 'overdue' : ''}">⏱ ${fmtDate(t.prazo.date)}${over ? ' (atrasado)' : ''}</span>`;
   }
   if (t.prazo.month) { const [y, m] = t.prazo.month.split('-'); return `<span class="prazo-chip">⏱ ${MESES[Number(m) - 1]}/${y}</span>`; }
-  if (t.prazo.raw) return `<span class="prazo-chip">⏱ ${t.prazo.raw}</span>`;
+  if (t.prazo.raw) return `<span class="prazo-chip">⏱ ${esc(t.prazo.raw)}</span>`;
   return `<span class="prazo-chip" style="color:var(--muted)">sem prazo</span>`;
 }
 const progress = (t) => {
   const total = t.steps.length, done = t.steps.filter((s) => s.done).length;
   return { total, done, pct: total ? Math.round((100 * done) / total) : 0 };
 };
+const visible = () => TASKS.filter((t) => SHOW_ARCH ? true : !t.archived);
+const bySlug = (slug) => TASKS.find((t) => t.id === slug);
 
 async function api(path, opts) {
   const res = await fetch(`${API}${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(KEY)}`, opts);
@@ -192,33 +252,48 @@ async function api(path, opts) {
     if (KEY) { localStorage.setItem('pm_key', KEY); return api(path, opts); }
     throw new Error('sem chave');
   }
-  return res.json();
+  const body = await res.json();
+  if (!res.ok) { alert(body.error || 'erro na API'); throw new Error(body.error || 'api'); }
+  return body;
 }
+const post = (path, obj) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
 
 async function load() {
   TASKS = await api('/api/tasks');
   TASKS.sort((a, b) => a.title.localeCompare(b.title, 'pt'));
-  $('#meta').textContent = `${TASKS.length} projetos · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  $('#meta').textContent = `${visible().length} projetos · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   render();
+  if (MODAL_SLUG) renderModal(MODAL_SLUG); // mantém o modal em dia
 }
 
 function render() {
   const main = $('#main');
   document.querySelectorAll('#nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === VIEW));
-  if (!TASKS.length) { main.innerHTML = '<div class="empty">Nenhum projeto ainda.</div>'; return; }
+  if (!visible().length) { main.innerHTML = '<div class="empty">Nenhum projeto por aqui.</div>'; return; }
   if (VIEW === 'kanban') renderKanban(main);
   else if (VIEW === 'cards') renderCards(main);
   else if (VIEW === 'agenda') renderAgenda(main);
   else renderGantt(main);
 }
 
+function bindCardClicks(main) {
+  main.querySelectorAll('[data-open]').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      if (DRAGGING) return;
+      if (e.target.closest('input,button,a,select')) return;
+      openModal(el.dataset.open);
+    });
+  });
+}
+
 /* ================= kanban ================= */
 function renderKanban(main) {
+  const items0 = visible();
   const known = STATUS.map((s) => s.key);
-  const extras = [...new Set(TASKS.map((t) => t.status))].filter((s) => !known.includes(s));
+  const extras = [...new Set(items0.map((t) => t.status))].filter((s) => !known.includes(s));
   const cols = [...STATUS.map((s) => s.key), ...extras];
   main.innerHTML = `<div class="board">` + cols.map((st) => {
-    const items = TASKS.filter((t) => t.status === st);
+    const items = items0.filter((t) => t.status === st);
     if (!items.length && !['em andamento', 'a verificar', 'aguardando detalhes', 'concluído'].includes(st)) return '';
     return `<div class="col">
       <div class="col-head"><span class="dot" style="background:${statusColor(st)}"></span><b>${st}</b><span class="count">${items.length}</span></div>
@@ -228,57 +303,61 @@ function renderKanban(main) {
 
   main.querySelectorAll('.card').forEach((el) => {
     el.draggable = true;
-    el.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', el.dataset.id));
+    el.addEventListener('dragstart', (e) => { DRAGGING = true; e.dataTransfer.setData('text/plain', el.dataset.open); });
+    el.addEventListener('dragend', () => setTimeout(() => { DRAGGING = false; }, 50));
   });
   main.querySelectorAll('.col-body').forEach((col) => {
     col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('dragover'); });
     col.addEventListener('dragleave', () => col.classList.remove('dragover'));
     col.addEventListener('drop', async (e) => {
       e.preventDefault(); col.classList.remove('dragover');
-      const id = e.dataTransfer.getData('text/plain');
-      await api('/api/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug: id, status: col.dataset.status }) });
+      const slug = e.dataTransfer.getData('text/plain');
+      await post('/api/task/update', { slug, status: col.dataset.status });
       load();
     });
   });
+  bindCardClicks(main);
 }
 function cardHTML(t) {
   const p = progress(t);
-  return `<div class="card" data-id="${t.id}">
-    <h3>${t.title}</h3>
-    <div class="sub">${prazoChip(t)}${p.total ? `<span>${p.done}/${p.total} passos</span>` : ''}</div>
+  return `<div class="card" data-open="${t.id}">
+    <h3>${esc(t.title)}</h3>
+    <div class="sub">${prazoChip(t)}${p.total ? `<span>${p.done}/${p.total}</span>` : ''}${t.attachments.length ? `<span class="clip">📎${t.attachments.length}</span>` : ''}${t.archived ? '<span class="arch-badge">ARQ</span>' : ''}</div>
     ${p.total ? `<div class="progress"><i style="width:${p.pct}%;background:${statusColor(t.status)}"></i></div>` : ''}
   </div>`;
 }
 
 /* ================= cards ================= */
 function renderCards(main) {
-  main.innerHTML = `<div class="grid">` + TASKS.map((t) => `
-    <div class="bigcard">
-      <div class="top"><h3>${t.title}</h3><span class="status-chip" style="background:${statusColor(t.status)}">${t.status}</span></div>
-      <div class="sub" style="color:var(--muted);font-size:12px">${prazoChip(t)}</div>
+  main.innerHTML = `<div class="grid">` + visible().map((t) => `
+    <div class="bigcard" data-open="${t.id}">
+      <div class="top"><h3>${esc(t.title)}</h3><span class="status-chip" style="background:${statusColor(t.status)}">${t.status}</span></div>
+      <div class="sub" style="color:var(--muted);font-size:12px">${prazoChip(t)} ${t.attachments.length ? `<span class="clip">📎${t.attachments.length}</span>` : ''} ${t.archived ? '<span class="arch-badge">ARQ</span>' : ''}</div>
       <ul class="steps">${t.steps.map((s) => `
-        <li class="${s.done ? 'done' : ''}"><input type="checkbox" ${s.done ? 'checked' : ''} data-step="${s.id}"><span>${s.label}</span></li>`).join('')}
+        <li class="${s.done ? 'done' : ''}"><input type="checkbox" ${s.done ? 'checked' : ''} data-step="${s.id}"><span>${esc(s.label)}</span></li>`).join('')}
       </ul>
-      ${t.notas ? `<div class="notas">${t.notas.replace(/^- /gm, '• ')}</div>` : ''}
+      ${t.notas ? `<div class="notas">${esc(t.notas).replace(/^- /gm, '• ')}</div>` : ''}
     </div>`).join('') + `</div>`;
   main.querySelectorAll('.steps input').forEach((cb) => {
     cb.addEventListener('change', async () => {
-      await api('/api/step', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: Number(cb.dataset.step), done: cb.checked }) });
+      await post('/api/step', { id: Number(cb.dataset.step), done: cb.checked });
       load();
     });
   });
+  bindCardClicks(main);
 }
 
 /* ================= agenda ================= */
 function renderAgenda(main) {
+  const items = visible().filter((t) => !t.archived);
   const { y, m } = CAL;
   const first = new Date(y, m, 1);
   const startDow = first.getDay();
   const daysIn = new Date(y, m + 1, 0).getDate();
   const monthKey = `${y}-${String(m + 1).padStart(2, '0')}`;
   const byDate = {};
-  for (const t of TASKS) if (t.prazo.date) (byDate[t.prazo.date] ??= []).push(t);
-  const monthEvs = TASKS.filter((t) => t.prazo.month === monthKey);
+  for (const t of items) if (t.prazo.date) (byDate[t.prazo.date] ??= []).push(t);
+  const monthEvs = items.filter((t) => t.prazo.month === monthKey);
   const today = todayISO();
 
   let cells = '';
@@ -286,14 +365,16 @@ function renderAgenda(main) {
     const dnum = i - startDow + 1;
     if (dnum < 1 || dnum > daysIn) { cells += `<td class="other"></td>`; if (i % 7 === 6) cells += '</tr><tr>'; continue; }
     const iso = `${monthKey}-${String(dnum).padStart(2, '0')}`;
-    const evs = (byDate[iso] || []).map((t) => `<div class="cal-ev" style="background:${statusColor(t.status)}" title="${t.title}">${t.title}</div>`).join('');
+    const evs = (byDate[iso] || []).map((t) => `<div class="cal-ev" data-open="${t.id}" style="background:${statusColor(t.status)}" title="${esc(t.title)}">${esc(t.title)}</div>`).join('');
     cells += `<td class="${iso === today ? 'today' : ''}"><span class="d">${dnum}</span>${evs}</td>`;
     if (i % 7 === 6) cells += '</tr><tr>';
   }
 
-  const dated = TASKS.filter((t) => t.prazo.date && t.prazo.date >= today).sort((a, b) => a.prazo.date.localeCompare(b.prazo.date));
-  const monthly = TASKS.filter((t) => t.prazo.month && t.prazo.month >= today.slice(0, 7)).sort((a, b) => a.prazo.month.localeCompare(b.prazo.month));
-  const noPrazo = TASKS.filter((t) => !t.prazo.date && !t.prazo.month && !['concluído', 'mesclado'].includes(t.status));
+  const dated = items.filter((t) => t.prazo.date && t.prazo.date >= today).sort((a, b) => a.prazo.date.localeCompare(b.prazo.date));
+  const monthly = items.filter((t) => t.prazo.month && t.prazo.month >= today.slice(0, 7)).sort((a, b) => a.prazo.month.localeCompare(b.prazo.month));
+  const noPrazo = items.filter((t) => !t.prazo.date && !t.prazo.month && !['concluído', 'mesclado'].includes(t.status));
+  const alerts = items.flatMap((t) => t.alerts.filter((a) => !a.fired).map((a) => ({ ...a, task: t.title })))
+    .sort((a, b) => a.fire_at.localeCompare(b.fire_at)).slice(0, 8);
 
   main.innerHTML = `<div class="agenda-wrap">
     <div class="cal">
@@ -302,24 +383,26 @@ function renderAgenda(main) {
         <b>${first.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</b>
         <button id="next">›</button>
       </div>
-      <div class="cal-month-events">${monthEvs.map((t) => `<div class="month-ev">📌 <b>${t.title}</b> — prazo em ${MESES[m]}/${y} (sem data exata)</div>`).join('')}</div>
+      <div class="cal-month-events">${monthEvs.map((t) => `<div class="month-ev">📌 <b>${esc(t.title)}</b> — prazo em ${MESES[m]}/${y} (sem data exata)</div>`).join('')}</div>
       <table><tr><th>dom</th><th>seg</th><th>ter</th><th>qua</th><th>qui</th><th>sex</th><th>sáb</th></tr><tr>${cells}</tr></table>
     </div>
     <div class="upcoming">
       <h3>Próximos prazos</h3>
-      ${dated.map((t) => `<div class="up-item"><span class="up-date">${fmtDate(t.prazo.date)}</span><span>${t.title}</span></div>`).join('')}
-      ${monthly.map((t) => { const [yy, mm] = t.prazo.month.split('-'); return `<div class="up-item"><span class="up-date">${MESES[Number(mm) - 1]}/${yy}</span><span>${t.title} <span style="color:var(--muted)">(mês)</span></span></div>`; }).join('')}
+      ${dated.map((t) => `<div class="up-item"><span class="up-date">${fmtDate(t.prazo.date)}</span><span>${esc(t.title)}</span></div>`).join('')}
+      ${monthly.map((t) => { const [yy, mm] = t.prazo.month.split('-'); return `<div class="up-item"><span class="up-date">${MESES[Number(mm) - 1]}/${yy}</span><span>${esc(t.title)} <span style="color:var(--muted)">(mês)</span></span></div>`; }).join('')}
       ${!dated.length && !monthly.length ? '<div class="up-none">Nenhum prazo definido.</div>' : ''}
-      ${noPrazo.length ? `<h3 style="margin-top:16px">Sem prazo</h3>${noPrazo.map((t) => `<div class="up-item"><span class="up-date">—</span><span>${t.title}</span></div>`).join('')}` : ''}
+      ${alerts.length ? `<h3 style="margin-top:16px">Alertas agendados</h3>${alerts.map((a) => `<div class="up-item"><span class="up-date">${fmtDateTime(a.fire_at)}</span><span>⏰ ${esc(a.message)} <span style="color:var(--muted)">(${esc(a.task)})</span></span></div>`).join('')}` : ''}
+      ${noPrazo.length ? `<h3 style="margin-top:16px">Sem prazo</h3>${noPrazo.map((t) => `<div class="up-item"><span class="up-date">—</span><span>${esc(t.title)}</span></div>`).join('')}` : ''}
     </div>
   </div>`;
   $('#prev').onclick = () => { CAL.m--; if (CAL.m < 0) { CAL.m = 11; CAL.y--; } render(); };
   $('#next').onclick = () => { CAL.m++; if (CAL.m > 11) { CAL.m = 0; CAL.y++; } render(); };
+  bindCardClicks(main);
 }
 
 /* ================= gantt ================= */
 function renderGantt(main) {
-  const rows = TASKS.filter((t) => !['mesclado'].includes(t.status));
+  const rows = visible().filter((t) => !['mesclado'].includes(t.status) && !t.archived);
   const today = new Date(todayISO());
   const D = 86400000;
   const ends = rows.map((t) => {
@@ -350,25 +433,25 @@ function renderGantt(main) {
     const end = ends[i];
     const color = statusColor(t.status).replace('var(--muted)', 'var(--baseline)');
     const p = progress(t);
-    const label = `<text class="rowlabel" x="0" y="${yPos + 13}">${t.title.length > 26 ? t.title.slice(0, 25) + '…' : t.title}</text>` +
+    const label = `<text class="rowlabel" x="0" y="${yPos + 13}" style="cursor:pointer" data-open="${t.id}">${esc(t.title.length > 26 ? t.title.slice(0, 25) + '…' : t.title)}</text>` +
       `<text class="rowsub" x="0" y="${yPos + 25}">${t.status}${p.total ? ` · ${p.done}/${p.total}` : ''}</text>`;
     if (end) {
       const e = Math.max(x(end), s + 8);
       const monthOnly = !t.prazo.date;
       return label +
         `<rect x="${s}" y="${yPos + 4}" width="${e - s}" height="${RW - 8}" rx="4" fill="${color}" ${monthOnly ? 'opacity="0.45"' : 'opacity="0.9"'}>
-           <title>${t.title} — ${fmtDate(starts[i].toISOString().slice(0,10))} até ${monthOnly ? 'fim de ' + MESES[end.getMonth()] : fmtDate(end.toISOString().slice(0,10))}</title>
+           <title>${esc(t.title)}</title>
          </rect>` +
         (p.total ? `<rect x="${s}" y="${yPos + 4}" width="${(e - s) * p.pct / 100}" height="${RW - 8}" rx="4" fill="${color}"/>` : '');
     }
     const e = x(today);
     return label +
-      `<rect x="${s}" y="${yPos + 4}" width="${Math.max(e - s, 8)}" height="${RW - 8}" rx="4" fill="${color}" opacity="0.9"><title>${t.title} — sem prazo definido</title></rect>` +
+      `<rect x="${s}" y="${yPos + 4}" width="${Math.max(e - s, 8)}" height="${RW - 8}" rx="4" fill="${color}" opacity="0.9"><title>${esc(t.title)} — sem prazo definido</title></rect>` +
       `<line x1="${e + 2}" y1="${yPos + RW / 2}" x2="${e + 40}" y2="${yPos + RW / 2}" stroke="${color}" stroke-width="2" stroke-dasharray="3 4"/>`;
   }).join('');
 
   main.innerHTML = `<div class="gantt-card">
-    <p class="gantt-note">Barra sólida = prazo definido · translúcida = prazo só de mês · tracejada = sem prazo (em aberto). Início = data do primeiro passo registrado.</p>
+    <p class="gantt-note">Barra sólida = prazo definido · translúcida = prazo só de mês · tracejada = sem prazo (em aberto). Clique no nome pra abrir os detalhes.</p>
     <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
       ${months}
       <line x1="${x(today)}" y1="${TOP - 8}" x2="${x(today)}" y2="${H - 10}" stroke="var(--red)" stroke-width="1.5"/>
@@ -376,14 +459,201 @@ function renderGantt(main) {
       ${bars}
     </svg>
   </div>`;
+  main.querySelectorAll('[data-open]').forEach((el) => el.addEventListener('click', () => openModal(el.dataset.open)));
 }
 
+/* ================= modal ================= */
+function openModal(slug) {
+  MODAL_SLUG = slug ?? '';
+  renderModal(MODAL_SLUG);
+  $('#overlay').classList.add('open');
+}
+function closeModal() {
+  MODAL_SLUG = null;
+  $('#overlay').classList.remove('open');
+}
+
+function renderModal(slug) {
+  const t = slug ? bySlug(slug) : null;
+  if (slug && !t) { closeModal(); return; }
+  const isNew = !t;
+  const statusOpts = STATUS.map((s) => `<option value="${s.key}" ${t?.status === s.key ? 'selected' : ''}>${s.key}</option>`).join('');
+
+  $('#modal').innerHTML = `
+    <button class="m-close" id="m-close">×</button>
+    <h2>${isNew ? 'Novo projeto' : esc(t.title)}</h2>
+    ${isNew ? '' : `<div class="muted-note">${t.id}${t.archived ? ' · <b>arquivado</b>' : ''}</div>`}
+
+    <div class="m-sec">
+      <div class="m-row">
+        <div class="field" style="flex:2"><label>Título</label><input type="text" id="m-title" value="${esc(t?.title ?? '')}"></div>
+        <div class="field"><label>Status</label><select id="m-status">${statusOpts}</select></div>
+      </div>
+      <div class="m-row">
+        <div class="field"><label>Prazo (data exata)</label><input type="date" id="m-prazo-date" value="${t?.prazo.date ?? ''}"></div>
+        <div class="field"><label>ou mês</label><input type="month" id="m-prazo-month" value="${t?.prazo.month ?? ''}"></div>
+        <div class="field"><label>ou texto livre</label><input type="text" id="m-prazo-raw" value="${esc(t?.prazo.raw ?? '')}" placeholder="ex: depois do edital"></div>
+      </div>
+      <div class="m-row"><div class="field" style="flex:1 1 100%"><label>Notas</label><textarea id="m-notas">${esc(t?.notas ?? '')}</textarea></div></div>
+      <button class="btn primary" id="m-save">${isNew ? 'Criar projeto' : 'Salvar alterações'}</button>
+    </div>
+
+    ${isNew ? '' : `
+    <div class="m-sec">
+      <h4>Passos</h4>
+      <ul class="m-list">${t.steps.map((s) => `
+        <li>
+          <input type="checkbox" ${s.done ? 'checked' : ''} data-stepck="${s.id}" style="accent-color:var(--good)">
+          <span class="grow" style="${s.done ? 'color:var(--muted);text-decoration:line-through' : ''}">${esc(s.label)}</span>
+          <button class="icon-btn" data-stepedit="${s.id}" title="editar">✎</button>
+          <button class="icon-btn" data-stepdel="${s.id}" title="remover">×</button>
+        </li>`).join('')}
+      </ul>
+      <div class="m-row" style="margin-top:8px">
+        <input type="text" id="m-newstep" placeholder="novo passo..." style="flex:1">
+        <button class="btn small" id="m-addstep">adicionar</button>
+      </div>
+    </div>
+
+    <div class="m-sec">
+      <h4>Anexos</h4>
+      <ul class="m-list">${t.attachments.map((a) => `
+        <li>
+          <span class="grow"><a class="att-link" data-file="${a.id}">📎 ${esc(a.filename)}</a></span>
+          <span class="dim">${fmtSize(a.size)}</span>
+          <button class="icon-btn" data-attdel="${a.id}" title="apagar">×</button>
+        </li>`).join('') || '<li class="dim" style="border:0">nenhum anexo</li>'}
+      </ul>
+      <div class="m-row" style="margin-top:8px">
+        <input type="file" id="m-file" style="flex:1">
+        <button class="btn small" id="m-upload">enviar</button>
+      </div>
+    </div>
+
+    <div class="m-sec">
+      <h4>Alertas (chegam no Telegram)</h4>
+      <ul class="m-list">${t.alerts.map((a) => `
+        <li>
+          <span class="grow">⏰ ${esc(a.message)} <span class="dim">(${esc(a.rule)})</span></span>
+          <span class="dim">${a.fired ? 'disparado' : fmtDateTime(a.fire_at)}</span>
+          <button class="icon-btn" data-alertdel="${a.id}" title="cancelar">×</button>
+        </li>`).join('') || '<li class="dim" style="border:0">nenhum alerta</li>'}
+      </ul>
+      <div class="m-row" style="margin-top:8px">
+        <input type="text" id="m-alertmsg" placeholder="mensagem do lembrete..." style="flex:1 1 100%">
+      </div>
+      <div class="m-row">
+        <div class="field"><label>Data e hora</label><input type="datetime-local" id="m-alertdt"></div>
+        <div class="field"><label>ou dias antes do prazo</label><input type="number" id="m-alertdays" min="0" placeholder="ex: 2" ${t.prazo.date ? '' : 'disabled title="defina um prazo com data exata"'}></div>
+        <button class="btn small" id="m-addalert" style="align-self:flex-end">agendar</button>
+      </div>
+    </div>
+
+    <div class="m-footer">
+      <button class="btn" id="m-arch">${t.archived ? 'Restaurar' : 'Arquivar'}</button>
+      <span class="spacer"></span>
+      <button class="btn danger" id="m-del">Apagar de vez</button>
+    </div>`}
+  `;
+
+  /* ------- binds ------- */
+  $('#m-close').onclick = closeModal;
+
+  $('#m-save').onclick = async () => {
+    const body = {
+      title: $('#m-title').value.trim(),
+      status: $('#m-status').value,
+      prazo_date: $('#m-prazo-date').value,
+      prazo_month: $('#m-prazo-month').value,
+      prazo_raw: $('#m-prazo-raw').value.trim(),
+      notas: $('#m-notas').value,
+    };
+    if (!body.title) { alert('título obrigatório'); return; }
+    if (isNew) {
+      const r = await post('/api/task/create', body);
+      MODAL_SLUG = r.slug;
+    } else {
+      await post('/api/task/update', { slug: t.id, ...body });
+    }
+    await load();
+  };
+
+  if (isNew) return;
+
+  document.querySelectorAll('[data-stepck]').forEach((cb) => cb.onchange = async () => {
+    await post('/api/step', { id: Number(cb.dataset.stepck), done: cb.checked }); load();
+  });
+  document.querySelectorAll('[data-stepedit]').forEach((b) => b.onclick = async () => {
+    const s = t.steps.find((x) => x.id === Number(b.dataset.stepedit));
+    const label = prompt('Editar passo:', s.label);
+    if (label && label.trim()) { await post('/api/step/edit', { id: s.id, label: label.trim() }); load(); }
+  });
+  document.querySelectorAll('[data-stepdel]').forEach((b) => b.onclick = async () => {
+    await post('/api/step/delete', { id: Number(b.dataset.stepdel) }); load();
+  });
+  $('#m-addstep').onclick = async () => {
+    const label = $('#m-newstep').value.trim();
+    if (!label) return;
+    await post('/api/step/add', { slug: t.id, label }); load();
+  };
+  $('#m-newstep').onkeydown = (e) => { if (e.key === 'Enter') $('#m-addstep').click(); };
+
+  document.querySelectorAll('[data-file]').forEach((a) => a.onclick = async () => {
+    const r = await api(`/api/file?id=${a.dataset.file}`);
+    window.open(r.url, '_blank');
+  });
+  document.querySelectorAll('[data-attdel]').forEach((b) => b.onclick = async () => {
+    if (!confirm('Apagar este anexo?')) return;
+    await post('/api/attachment/delete', { id: Number(b.dataset.attdel) }); load();
+  });
+  $('#m-upload').onclick = async () => {
+    const f = $('#m-file').files[0];
+    if (!f) { alert('escolha um arquivo'); return; }
+    if (f.size > 40_000_000) { alert('máximo 40MB'); return; }
+    await api(`/api/upload?slug=${encodeURIComponent(t.id)}&name=${encodeURIComponent(f.name)}`, {
+      method: 'POST', headers: { 'Content-Type': f.type || 'application/octet-stream' }, body: f,
+    });
+    load();
+  };
+
+  document.querySelectorAll('[data-alertdel]').forEach((b) => b.onclick = async () => {
+    await post('/api/alert/delete', { id: Number(b.dataset.alertdel) }); load();
+  });
+  $('#m-addalert').onclick = async () => {
+    const message = $('#m-alertmsg').value.trim();
+    if (!message) { alert('escreva a mensagem do lembrete'); return; }
+    const dt = $('#m-alertdt').value;
+    const days = $('#m-alertdays').value;
+    const body = { slug: t.id, message };
+    if (dt) body.fire_at = `${dt}:00-03:00`; // horário de São Paulo
+    else if (days !== '') body.days_before = Number(days);
+    else { alert('escolha data/hora ou dias antes do prazo'); return; }
+    await post('/api/alert/add', body); load();
+  };
+
+  $('#m-arch').onclick = async () => {
+    await post('/api/task/update', { slug: t.id, archived: !t.archived });
+    await load();
+  };
+  $('#m-del').onclick = async () => {
+    if (!confirm(`Apagar "${t.title}" de vez? Passos, anexos e alertas somem junto.`)) return;
+    await post('/api/task/delete', { slug: t.id });
+    closeModal(); load();
+  };
+}
+
+/* ================= chrome ================= */
 $('#nav').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   VIEW = b.dataset.view; render();
 });
+$('#btn-new').onclick = () => openModal(null);
+$('#show-arch').onchange = (e) => { SHOW_ARCH = e.target.checked; load(); };
+$('#overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
 load();
-setInterval(load, 15000); // acompanha edições feitas pelo bot do Telegram
+setInterval(() => { if (!MODAL_SLUG) load(); }, 20000); // acompanha o bot (pausa com modal aberto)
 </script>
 </body>
 </html>
