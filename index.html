@@ -177,6 +177,39 @@
   .m-footer { display: flex; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--grid); flex-wrap: wrap; }
   .m-footer .spacer { flex: 1; }
   .muted-note { color: var(--muted); font-size: 12px; }
+
+  /* ---------- campos de data com calendário ---------- */
+  .datewrap { display: flex; align-items: stretch; gap: 0; }
+  .datewrap input { flex: 1; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: 0; }
+  .datewrap input::-webkit-calendar-picker-indicator { display: none; }
+  .cal-btn {
+    border: 1px solid var(--border); background: var(--page); color: var(--muted);
+    border-top-right-radius: 8px; border-bottom-right-radius: 8px; cursor: pointer;
+    padding: 0 9px; font-size: 14px; line-height: 1;
+  }
+  .cal-btn:hover { background: var(--grid); color: var(--ink); }
+
+  /* ---------- visualizador de anexos ---------- */
+  #viewer {
+    position: fixed; inset: 0; background: rgba(0,0,0,.8); z-index: 70;
+    display: none; flex-direction: column;
+  }
+  #viewer.open { display: flex; }
+  #v-bar { display: flex; gap: 12px; align-items: center; padding: 12px 18px; color: #fff; }
+  #v-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  #v-bar .btn { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.25); color: #fff; }
+  #v-bar .btn:hover { background: rgba(255,255,255,.22); }
+  #v-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 0 18px 18px; min-height: 0; }
+  #v-body img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; }
+  #v-body iframe { width: 100%; height: 100%; border: 0; border-radius: 10px; background: #fff; }
+  #v-body video { max-width: 100%; max-height: 100%; border-radius: 10px; }
+  #v-body pre {
+    max-width: 100%; max-height: 100%; overflow: auto; margin: 0;
+    background: var(--surface-1); color: var(--ink); border-radius: 10px; padding: 16px 20px;
+    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap;
+  }
+  #v-body .v-fallback { color: #fff; text-align: center; }
+  #v-loading { color: rgba(255,255,255,.7); }
 </style>
 </head>
 <body>
@@ -195,6 +228,15 @@
 <main id="main"></main>
 
 <div id="overlay"><div id="modal"></div></div>
+
+<div id="viewer">
+  <div id="v-bar">
+    <span id="v-name"></span>
+    <button class="btn small" id="v-dl">⬇ baixar</button>
+    <button class="btn small" id="v-close">× fechar</button>
+  </div>
+  <div id="v-body"></div>
+</div>
 
 <script>
 const $ = (s, el = document) => el.querySelector(s);
@@ -490,8 +532,8 @@ function renderModal(slug) {
         <div class="field"><label>Status</label><select id="m-status">${statusOpts}</select></div>
       </div>
       <div class="m-row">
-        <div class="field"><label>Prazo (data exata)</label><input type="date" id="m-prazo-date" value="${t?.prazo.date ?? ''}"></div>
-        <div class="field"><label>ou mês</label><input type="month" id="m-prazo-month" value="${t?.prazo.month ?? ''}"></div>
+        <div class="field"><label>Prazo (data exata)</label><div class="datewrap"><input type="date" id="m-prazo-date" value="${t?.prazo.date ?? ''}"><button type="button" class="cal-btn" data-pick="m-prazo-date" title="abrir calendário">📅</button></div></div>
+        <div class="field"><label>ou mês</label><div class="datewrap"><input type="month" id="m-prazo-month" value="${t?.prazo.month ?? ''}"><button type="button" class="cal-btn" data-pick="m-prazo-month" title="abrir calendário">📅</button></div></div>
         <div class="field"><label>ou texto livre</label><input type="text" id="m-prazo-raw" value="${esc(t?.prazo.raw ?? '')}" placeholder="ex: depois do edital"></div>
       </div>
       <div class="m-row"><div class="field" style="flex:1 1 100%"><label>Notas</label><textarea id="m-notas">${esc(t?.notas ?? '')}</textarea></div></div>
@@ -543,7 +585,7 @@ function renderModal(slug) {
         <input type="text" id="m-alertmsg" placeholder="mensagem do lembrete..." style="flex:1 1 100%">
       </div>
       <div class="m-row">
-        <div class="field"><label>Data e hora</label><input type="datetime-local" id="m-alertdt"></div>
+        <div class="field"><label>Data e hora</label><div class="datewrap"><input type="datetime-local" id="m-alertdt"><button type="button" class="cal-btn" data-pick="m-alertdt" title="abrir calendário">📅</button></div></div>
         <div class="field"><label>ou dias antes do prazo</label><input type="number" id="m-alertdays" min="0" placeholder="ex: 2" ${t.prazo.date ? '' : 'disabled title="defina um prazo com data exata"'}></div>
         <button class="btn small" id="m-addalert" style="align-self:flex-end">agendar</button>
       </div>
@@ -598,9 +640,15 @@ function renderModal(slug) {
   };
   $('#m-newstep').onkeydown = (e) => { if (e.key === 'Enter') $('#m-addstep').click(); };
 
-  document.querySelectorAll('[data-file]').forEach((a) => a.onclick = async () => {
-    const r = await api(`/api/file?id=${a.dataset.file}`);
-    window.open(r.url, '_blank');
+  document.querySelectorAll('.cal-btn').forEach((b) => b.onclick = () => {
+    const input = document.getElementById(b.dataset.pick);
+    if (input.showPicker) { try { input.showPicker(); } catch { input.focus(); } }
+    else input.focus();
+  });
+
+  document.querySelectorAll('[data-file]').forEach((a) => a.onclick = () => {
+    const att = t.attachments.find((x) => x.id === Number(a.dataset.file));
+    if (att) openViewer(att);
   });
   document.querySelectorAll('[data-attdel]').forEach((b) => b.onclick = async () => {
     if (!confirm('Apagar este anexo?')) return;
@@ -642,6 +690,43 @@ function renderModal(slug) {
   };
 }
 
+/* ================= visualizador de anexos ================= */
+async function openViewer(att) {
+  const v = $('#viewer'), body = $('#v-body');
+  $('#v-name').textContent = att.filename;
+  body.innerHTML = '<div id="v-loading">carregando…</div>';
+  v.classList.add('open');
+
+  $('#v-dl').onclick = async () => {
+    const d = await api(`/api/file?id=${att.id}&dl=1`);
+    window.open(d.url, '_blank');
+  };
+
+  try {
+    const r = await api(`/api/file?id=${att.id}`);
+    const m = att.mime || '';
+    if (m.startsWith('image/')) {
+      body.innerHTML = `<img src="${r.url}" alt="${esc(att.filename)}">`;
+    } else if (m === 'application/pdf') {
+      body.innerHTML = `<iframe src="${r.url}" title="${esc(att.filename)}"></iframe>`;
+    } else if (m.startsWith('video/')) {
+      body.innerHTML = `<video controls autoplay src="${r.url}"></video>`;
+    } else if (m.startsWith('audio/')) {
+      body.innerHTML = `<audio controls autoplay src="${r.url}" style="width:min(480px,90%)"></audio>`;
+    } else if (m.startsWith('text/') || ['application/json', 'application/xml', 'application/javascript'].includes(m)) {
+      const txt = await (await fetch(r.url)).text();
+      body.innerHTML = `<pre>${esc(txt.slice(0, 200000))}${txt.length > 200000 ? '\n… (truncado)' : ''}</pre>`;
+    } else {
+      body.innerHTML = `<div class="v-fallback">Sem visualização para este tipo de arquivo<br><span style="opacity:.7">(${esc(m || 'desconhecido')})</span><br><br>Use o botão <b>baixar</b> aí em cima ☝️</div>`;
+    }
+  } catch (e) {
+    body.innerHTML = `<div class="v-fallback">Erro ao carregar o arquivo.</div>`;
+  }
+}
+function closeViewer() { $('#viewer').classList.remove('open'); $('#v-body').innerHTML = ''; }
+$('#v-close').onclick = closeViewer;
+$('#viewer').addEventListener('click', (e) => { if (e.target.id === 'viewer' || e.target.id === 'v-body') closeViewer(); });
+
 /* ================= chrome ================= */
 $('#nav').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
@@ -650,7 +735,11 @@ $('#nav').addEventListener('click', (e) => {
 $('#btn-new').onclick = () => openModal(null);
 $('#show-arch').onchange = (e) => { SHOW_ARCH = e.target.checked; load(); };
 $('#overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') closeModal(); });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if ($('#viewer').classList.contains('open')) closeViewer();
+  else closeModal();
+});
 
 load();
 setInterval(() => { if (!MODAL_SLUG) load(); }, 20000); // acompanha o bot (pausa com modal aberto)
