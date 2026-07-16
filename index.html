@@ -312,10 +312,16 @@
 <script>
 const $ = (s, el = document) => el.querySelector(s);
 const API = 'https://iucqufccyboilasswnun.supabase.co/functions/v1/dashboard';
+// A chave nunca vai na URL das chamadas de API (fica fora de logs e histórico);
+// viaja no header x-pm-key. Aceita ?key= só p/ bootstrap e limpa a barra na hora.
 let KEY = new URLSearchParams(location.search).get('key') || localStorage.getItem('pm_key') || '';
 if (new URLSearchParams(location.search).get('key')) {
   localStorage.setItem('pm_key', KEY);
   history.replaceState(null, '', location.pathname); // tira a chave da URL
+}
+if (!KEY) { // primeiro acesso sem ?key= — pede e guarda no navegador
+  KEY = prompt('Chave de acesso do painel:') || '';
+  if (KEY) localStorage.setItem('pm_key', KEY);
 }
 let TASKS = [];
 let VIEW = 'kanban';
@@ -392,8 +398,8 @@ function renderFilters() {
   $('#f-clear').classList.toggle('on', Boolean(FILTERS.q || FILTERS.empresa || FILTERS.projeto || FILTERS.status || FILTERS.prazo));
 }
 
-async function api(path, opts) {
-  const res = await fetch(`${API}${path}${path.includes('?') ? '&' : '?'}key=${encodeURIComponent(KEY)}`, opts);
+async function api(path, opts = {}) {
+  const res = await fetch(`${API}${path}`, { ...opts, headers: { ...(opts.headers || {}), 'x-pm-key': KEY } });
   if (res.status === 401) {
     localStorage.removeItem('pm_key');
     KEY = prompt('Chave de acesso do painel:') || '';
@@ -872,8 +878,8 @@ async function sendChat() {
   box.scrollTop = box.scrollHeight;
   $('#c-typing').classList.add('on');
   try {
-    const res = await fetch(`${AGENT}?chat=1&key=${encodeURIComponent(KEY)}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }),
+    const res = await fetch(`${AGENT}?chat=1`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-pm-key': KEY }, body: JSON.stringify({ text }),
     });
     const body = await res.json();
     if (!res.ok) throw new Error(body.error || 'erro');
