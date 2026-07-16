@@ -275,6 +275,16 @@
   .em-out { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12.5px; background: var(--page); border: 1px solid var(--grid); border-radius: 10px; padding: 12px 14px; max-height: 420px; overflow-y: auto; }
   .em-out a { color: var(--accent); }
   .em-note { color: var(--muted); font-size: 12.5px; }
+  .em-sub a { color: var(--ink); text-decoration: none; }
+  .em-sub a:hover { color: var(--accent); text-decoration: underline; }
+  #em-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; align-items: center; justify-content: center; padding: 20px; }
+  #em-view.open { display: flex; }
+  #em-view-box { background: var(--page); border: 1px solid var(--grid); border-radius: 14px; width: min(780px, 100%); max-height: 84vh; display: flex; flex-direction: column; overflow: hidden; }
+  #em-view-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--grid); }
+  #em-view-bar b { flex: 1; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #em-view-bar a { color: var(--accent); font-size: 12.5px; text-decoration: none; flex: none; }
+  #em-view-body { padding: 14px 16px; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
+  #em-view-body a { color: var(--accent); }
   .em-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .em-acts .btn { font-size: 11.5px; padding: 2px 8px; }
   .em-item.pend { opacity: .65; }
@@ -360,6 +370,17 @@
 </div>
 
 <div id="overlay"><div id="modal"></div></div>
+
+<div id="em-view">
+  <div id="em-view-box">
+    <div id="em-view-bar">
+      <b id="em-view-title"></b>
+      <a id="em-view-spark" target="_blank" rel="noopener">Abrir no Spark ↗</a>
+      <button class="m-close" id="em-view-close">×</button>
+    </div>
+    <div id="em-view-body"></div>
+  </div>
+</div>
 
 <div id="viewer">
   <div id="v-bar">
@@ -1101,8 +1122,9 @@ function emItemHTML(m) {
     ? `<span class="em-pend">${esc(EM_ACTS.find((a) => a.act === pend)?.label || pend)} pendente</span><button class="btn small em-act" data-id="${m.spark_id}" data-act="">desfazer</button>`
     : EM_ACTS.map((a) => `<button class="btn small em-act" data-id="${m.spark_id}" data-act="${a.act}">${a.label}</button>`).join('')
   }</div>` : '';
+  const subj = esc(m.subject || '(sem assunto)');
   return `<div class="em-item ${esc(m.importance)} ${pend ? 'pend' : ''}">
-    <span class="em-sub">${esc(m.subject || '(sem assunto)')}${m.unread === false ? ' <span class="em-meta">· lido</span>' : ''}</span>
+    <span class="em-sub">${m.spark_id ? `<a href="#" class="em-open" data-id="${m.spark_id}" title="ler aqui no painel">${subj}</a>` : subj}${m.unread === false ? ' <span class="em-meta">· lido</span>' : ''}</span>
     <span class="em-meta">${esc(from)}${m.account ? ' · ' + esc(m.account) : ''}${when ? ' · ' + when : ''}</span>
     ${m.summary ? `<span class="em-sum">${esc(m.summary)}</span>` : ''}
     ${m.spark_link ? `<a href="${esc(m.spark_link)}" target="_blank" rel="noopener">Abrir no Spark ↗</a>` : ''}
@@ -1161,7 +1183,35 @@ async function renderEmail(main) {
   bindEmail(main);
 }
 
+/* pop-up de leitura: busca a thread via worker (spark thread) e mostra no painel */
+const EM_THREADS = new Map(); // spark_id -> html do corpo (cache da sessão)
+
+async function openEmailView(id) {
+  const m = (EMAIL_DATA?.emails || []).find((x) => x.spark_id === id);
+  $('#em-view-title').textContent = m?.subject || 'E-mail';
+  const sparkA = $('#em-view-spark');
+  if (m?.spark_link) { sparkA.href = m.spark_link; sparkA.style.display = ''; } else sparkA.style.display = 'none';
+  $('#em-view').classList.add('open');
+  if (EM_THREADS.has(id)) { $('#em-view-body').innerHTML = EM_THREADS.get(id); return; }
+  $('#em-view-body').innerHTML = '<span class="em-note">buscando no Spark do Mac… (~10s)</span>';
+  try {
+    const { id: jid } = await post('/api/email/enqueue', { kind: 'thread', params: { id } });
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 2500));
+      const j = await api(`/api/email/job?id=${jid}`);
+      if (j.status === 'done') { EM_THREADS.set(id, linkify(j.result || '(vazio)')); $('#em-view-body').innerHTML = EM_THREADS.get(id); return; }
+      if (j.status === 'error') { $('#em-view-body').innerHTML = `<span class="em-note">erro: ${esc(j.error || '?')}</span>`; return; }
+    }
+    $('#em-view-body').innerHTML = '<span class="em-note">demorou demais — o worker deve estar ocupado; tenta de novo já já.</span>';
+  } catch { $('#em-view-body').innerHTML = '<span class="em-note">erro ao buscar</span>'; }
+}
+const closeEmailView = () => $('#em-view').classList.remove('open');
+
 function bindEmail(main) {
+  main.querySelectorAll('.em-open').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    openEmailView(Number(a.dataset.id));
+  }));
   const btnCheck = $('#em-check', main);
   if (btnCheck) btnCheck.onclick = async () => {
     if (EMAIL_BUSY) return;
@@ -1309,9 +1359,12 @@ $('#f-clear').onclick = () => {
   renderFilters(); render();
 };
 $('#overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') closeModal(); });
+$('#em-view-close').onclick = closeEmailView;
+$('#em-view').addEventListener('click', (e) => { if (e.target.id === 'em-view') closeEmailView(); });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  if ($('#viewer').classList.contains('open')) closeViewer();
+  if ($('#em-view').classList.contains('open')) closeEmailView();
+  else if ($('#viewer').classList.contains('open')) closeViewer();
   else if (CHAT_OPEN) $('#c-close').onclick();
   else closeModal();
 });
