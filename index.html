@@ -252,12 +252,60 @@
   #c-typing.on { display: block; }
   #c-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--grid); }
   #c-text { flex: 1; resize: none; min-height: 40px; max-height: 120px; }
+
+  /* ================= aba e-mail ================= */
+  .em-wrap { display: flex; flex-direction: column; gap: 16px; max-width: 980px; margin: 0 auto; }
+  .em-status { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 12px 16px; border: 1px solid var(--grid); border-radius: 12px; background: var(--page); font-size: 13px; }
+  .em-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+  .em-dot.on { background: var(--good); } .em-dot.off { background: var(--red); }
+  .em-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .em-routine { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+  .em-routine input[type=text] { width: 130px; }
+  .em-group h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 8px; }
+  .em-item { display: flex; flex-direction: column; gap: 3px; padding: 10px 14px; border: 1px solid var(--grid); border-left: 4px solid var(--muted); border-radius: 10px; background: var(--page); margin-bottom: 8px; }
+  .em-item.agora { border-left-color: var(--red); }
+  .em-item.atencao { border-left-color: var(--yellow); }
+  .em-item .em-sub { font-weight: 600; font-size: 13.5px; }
+  .em-item .em-meta { color: var(--muted); font-size: 12px; }
+  .em-item .em-sum { font-size: 13px; }
+  .em-item a { color: var(--accent); font-size: 12.5px; text-decoration: none; }
+  .em-item a:hover { text-decoration: underline; }
+  .em-out { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12.5px; background: var(--page); border: 1px solid var(--grid); border-radius: 10px; padding: 12px 14px; max-height: 420px; overflow-y: auto; }
+  .em-out a { color: var(--accent); }
+  .em-note { color: var(--muted); font-size: 12.5px; }
+
+  /* ================= aba hoje ================= */
+  #subnav button { padding: 4px 12px; font-size: 12.5px; }
+  .home-wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .home-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .home-head h2 { margin: 0; font-size: 17px; font-weight: 650; }
+  .home-head .em-note { margin-left: auto; }
+  .home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .h-card { border: 1px solid var(--grid); border-radius: 12px; background: var(--page); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .h-card h3 { margin: 0; font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+  .h-big { font-size: 22px; font-weight: 650; line-height: 1.1; }
+  .h-sub { font-size: 12.5px; color: var(--muted); }
+  .h-up { color: var(--red); } .h-down { color: var(--good); }
+  .h-span { grid-column: 1 / -1; }
+  .h-list { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+  .h-list a { color: var(--ink); text-decoration: none; }
+  .h-list a:hover { color: var(--accent); text-decoration: underline; }
+  .h-item { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+  .h-item .src { color: var(--muted); font-size: 11px; flex: none; }
+  .h-when { flex: none; font-size: 11.5px; color: var(--muted); min-width: 58px; }
+  .h-when.late { color: var(--red); font-weight: 600; }
+  .h-gcal { border: 1px dashed var(--baseline); border-radius: 10px; padding: 8px 10px; color: var(--muted); font-size: 12px; }
 </style>
 </head>
 <body>
 <header>
   <h1>pm-agent <span>· painel de projetos</span></h1>
   <nav id="nav">
+    <button data-tab="hoje" class="active">🏠 Hoje</button>
+    <button data-tab="projetos">📋 Projetos</button>
+    <button data-tab="email">📬 E-mail</button>
+  </nav>
+  <nav id="subnav">
     <button data-view="kanban" class="active">Kanban</button>
     <button data-view="cards">Cards</button>
     <button data-view="agenda">Agenda</button>
@@ -324,7 +372,8 @@ if (!KEY) { // primeiro acesso sem ?key= — pede e guarda no navegador
   if (KEY) localStorage.setItem('pm_key', KEY);
 }
 let TASKS = [];
-let VIEW = 'kanban';
+let TAB = 'hoje';     // hoje | projetos | email
+let VIEW = 'kanban';  // subview da aba projetos
 let SHOW_ARCH = false;
 let MODAL_SLUG = null; // slug aberto no modal; '' = criando novo
 let DRAGGING = false;
@@ -423,7 +472,15 @@ async function load() {
 
 function render() {
   const main = $('#main');
-  document.querySelectorAll('#nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === VIEW));
+  const proj = TAB === 'projetos';
+  document.querySelectorAll('#nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === TAB));
+  document.querySelectorAll('#subnav button').forEach((b) => b.classList.toggle('active', b.dataset.view === VIEW));
+  $('#subnav').style.display = proj ? '' : 'none';
+  $('#filters').style.display = proj ? '' : 'none';
+  $('#btn-new').style.display = proj ? '' : 'none';
+  $('#show-arch').closest('label').style.display = proj ? '' : 'none';
+  if (TAB === 'hoje') { renderHome(main); return; }
+  if (TAB === 'email') { renderEmail(main); return; }
   if (!visible().length) { main.innerHTML = '<div class="empty">Nenhum projeto por aqui.</div>'; return; }
   if (VIEW === 'kanban') renderKanban(main);
   else if (VIEW === 'cards') renderCards(main);
@@ -849,6 +906,204 @@ function closeViewer() { $('#viewer').classList.remove('open'); $('#v-body').inn
 $('#v-close').onclick = closeViewer;
 $('#viewer').addEventListener('click', (e) => { if (e.target.id === 'viewer' || e.target.id === 'v-body') closeViewer(); });
 
+/* ================= aba hoje ================= */
+const HOME = { weather: null, dollar: null, news: null, ts: 0, loading: false };
+const HOME_TTL = 15 * 60 * 1000; // clima/dólar/notícias renovam a cada 15 min
+const WMO = { 0: '☀️ céu limpo', 1: '🌤 quase limpo', 2: '⛅ parc. nublado', 3: '☁️ nublado', 45: '🌫 névoa', 48: '🌫 névoa', 51: '🌦 garoa', 53: '🌦 garoa', 55: '🌦 garoa', 61: '🌧 chuva fraca', 63: '🌧 chuva', 65: '🌧 chuva forte', 66: '🌧 chuva gelada', 67: '🌧 chuva gelada', 80: '🌦 pancadas', 81: '🌧 pancadas', 82: '⛈ pancadas fortes', 95: '⛈ tempestade', 96: '⛈ tempestade', 99: '⛈ tempestade' };
+
+async function loadHome(force = false) {
+  if (HOME.loading || (!force && HOME.ts && Date.now() - HOME.ts < HOME_TTL)) return false;
+  HOME.loading = true;
+  const [w, d, n] = await Promise.allSettled([
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=-20.3155&longitude=-40.3128&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FSao_Paulo&forecast_days=1').then((r) => r.json()),
+    fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL').then((r) => r.json()),
+    api('/api/home/news'),
+  ]);
+  HOME.weather = w.status === 'fulfilled' ? w.value : null;
+  HOME.dollar = d.status === 'fulfilled' ? (d.value.USDBRL || null) : null;
+  HOME.news = n.status === 'fulfilled' ? n.value : null;
+  HOME.ts = Date.now();
+  HOME.loading = false;
+  return true;
+}
+
+// compromissos de hoje: prazos (hoje/atrasados) + alertas de hoje, dos projetos
+function homeAgenda() {
+  const today = todayISO();
+  const items = [];
+  for (const t of TASKS.filter((x) => !x.archived)) {
+    const closed = ['concluído', 'mesclado'].includes(t.status);
+    if (t.prazo.date && !closed && t.prazo.date <= today) {
+      items.push({ when: t.prazo.date < today ? 'atrasado' : 'hoje', late: t.prazo.date < today, title: t.title, slug: t.id });
+    }
+    for (const a of (t.alerts || [])) {
+      if (!a.fired && String(a.fire_at).slice(0, 10) === today) {
+        items.push({ when: new Date(a.fire_at).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }), late: false, title: `🔔 ${a.message}`, slug: t.id });
+      }
+    }
+  }
+  return items.sort((a, b) => (a.late === b.late ? 0 : a.late ? -1 : 1));
+}
+
+function homeHTML() {
+  const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long' });
+  const w = HOME.weather;
+  const cur = w?.current, day = w?.daily;
+  const clima = cur ? `
+    <div class="h-big">${Math.round(cur.temperature_2m)}°C</div>
+    <div class="h-sub">${WMO[cur.weather_code] || '—'} · Vitória/ES</div>
+    <div class="h-sub">máx ${Math.round(day?.temperature_2m_max?.[0] ?? 0)}° · mín ${Math.round(day?.temperature_2m_min?.[0] ?? 0)}° · 🌧 ${day?.precipitation_probability_max?.[0] ?? '–'}%</div>`
+    : `<div class="h-sub">${HOME.ts ? 'sem dados de clima' : 'carregando…'}</div>`;
+  const dlr = HOME.dollar;
+  const pct = dlr ? Number(dlr.pctChange) : 0;
+  const dolar = dlr ? `
+    <div class="h-big">R$ ${Number(dlr.bid).toFixed(2)}</div>
+    <div class="h-sub"><span class="${pct >= 0 ? 'h-up' : 'h-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span> hoje · comercial</div>`
+    : `<div class="h-sub">${HOME.ts ? 'sem cotação' : 'carregando…'}</div>`;
+  const ag = homeAgenda();
+  const agenda = (ag.length ? `<div class="h-list">${ag.slice(0, 8).map((i) =>
+    `<div class="h-item"><span class="h-when ${i.late ? 'late' : ''}">${esc(i.when)}</span><a href="#" data-open-task="${esc(i.slug)}">${esc(i.title)}</a></div>`).join('')}</div>`
+    : '<div class="h-sub">nada com prazo pra hoje 🎉</div>') +
+    '<div class="h-gcal">📅 Google Calendar — espaço reservado (sincronização em breve)</div>';
+  const unent = (s) => { const d = document.createElement('textarea'); d.innerHTML = String(s ?? ''); return d.value; };
+  const news = HOME.news?.length ? `<div class="h-list">${HOME.news.slice(0, 9).map((n) =>
+    `<div class="h-item"><span class="src">${esc(n.source)}</span><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(unent(n.title))}</a></div>`).join('')}</div>`
+    : `<div class="h-sub">${HOME.ts ? 'sem notícias no momento (configure as fontes pedindo ao gerente no chat)' : 'carregando…'}</div>`;
+  return `<div class="home-wrap">
+    <div class="home-head"><h2>${hoje.charAt(0).toUpperCase() + hoje.slice(1)}</h2>
+      <span class="em-note" id="h-refresh-note">${HOME.ts ? 'atualizado ' + new Date(HOME.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+      <button class="btn small" id="h-refresh">↻ atualizar</button></div>
+    <div class="home-grid">
+      <div class="h-card"><h3>🌤 Tempo</h3>${clima}</div>
+      <div class="h-card"><h3>💵 Dólar</h3>${dolar}</div>
+      <div class="h-card"><h3>📅 Agenda de hoje</h3>${agenda}</div>
+      <div class="h-card h-span"><h3>📰 Notícias</h3>${news}</div>
+    </div>
+  </div>`;
+}
+
+function bindHome(main) {
+  const btn = $('#h-refresh', main);
+  if (btn) btn.onclick = async () => { btn.disabled = true; await loadHome(true); if (TAB === 'hoje') { main.innerHTML = homeHTML(); bindHome(main); } };
+  main.querySelectorAll('[data-open-task]').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    TAB = 'projetos'; render();
+    openModal(a.dataset.openTask);
+  }));
+}
+
+async function renderHome(main) {
+  main.innerHTML = homeHTML();
+  bindHome(main);
+  const updated = await loadHome();
+  if (updated && TAB === 'hoje') { main.innerHTML = homeHTML(); bindHome(main); }
+}
+
+/* ================= aba e-mail ================= */
+let EMAIL_DATA = null;      // cache da última resposta (evita piscar no refresh)
+let EMAIL_BUSY = false;     // checagem em andamento
+let EMAIL_CHECK_OUT = '';   // resultado da última checagem (sobrevive ao redraw)
+
+const IMP = [
+  { key: 'agora',   label: '🔴 Agora (ação sua)' },
+  { key: 'atencao', label: '🟡 Atenção' },
+  { key: 'info',    label: 'ℹ️ Outros triados' },
+];
+
+function emItemHTML(m) {
+  const from = m.from_name || m.from_addr || '?';
+  const when = m.email_date ? fmtDateTime(m.email_date) : '';
+  return `<div class="em-item ${esc(m.importance)}">
+    <span class="em-sub">${esc(m.subject || '(sem assunto)')}</span>
+    <span class="em-meta">${esc(from)}${m.account ? ' · ' + esc(m.account) : ''}${when ? ' · ' + when : ''}</span>
+    ${m.summary ? `<span class="em-sum">${esc(m.summary)}</span>` : ''}
+    ${m.spark_link ? `<a href="${esc(m.spark_link)}" target="_blank" rel="noopener">Abrir no Spark ↗</a>` : ''}
+  </div>`;
+}
+
+function emailHTML(d) {
+  const w = d.worker || {};
+  const seen = w.last_seen_at ? fmtDateTime(w.last_seen_at) : 'nunca';
+  const run = d.last_run;
+  const runTxt = run ? `${fmtDateTime(run.finished_at || run.started_at)} (${(run.stats && run.stats.items) ?? 0} itens)` : 'nenhuma ainda';
+  const groups = IMP.map(({ key, label }) => {
+    const items = (d.emails || []).filter((m) => m.importance === key);
+    if (!items.length) return '';
+    return `<div class="em-group"><h3>${label}</h3>${items.map(emItemHTML).join('')}</div>`;
+  }).join('');
+  const routines = (d.routines || []).map((r) => `
+    <div class="em-routine" data-routine="${esc(r.name)}">
+      <b>${esc(r.name)}</b>
+      <input type="text" class="em-times" value="${esc((r.times || []).join(', '))}" title="horários HH:MM separados por vírgula (hora de SP)">
+      <label class="toggle"><input type="checkbox" class="em-enabled" ${r.enabled ? 'checked' : ''}> ativa</label>
+      <button class="btn small em-save-routine">salvar</button>
+      <span class="em-note">última: ${r.last_run_at ? fmtDateTime(r.last_run_at) : 'nunca'}</span>
+    </div>`).join('');
+  return `<div class="em-wrap">
+    <div class="em-status">
+      <span><span class="em-dot ${w.online ? 'on' : 'off'}"></span>worker do Mac: <b>${w.online ? 'online' : 'offline'}</b> (visto ${seen})</span>
+      <span>última triagem: <b>${runTxt}</b></span>
+      ${d.jobs_na_fila ? `<span>na fila: <b>${d.jobs_na_fila}</b></span>` : ''}
+    </div>
+    <div class="em-actions">
+      <button class="btn primary" id="em-check" ${w.online ? '' : 'disabled title="worker offline"'}>📥 Checar caixa agora</button>
+      <button class="btn" id="em-triage" ${w.online ? '' : 'disabled title="worker offline"'}>🧹 Triagem completa agora</button>
+      <span class="em-note" id="em-msg"></span>
+    </div>
+    <div id="em-checkout">${EMAIL_CHECK_OUT ? `<div class="em-out">${EMAIL_CHECK_OUT}</div>` : ''}</div>
+    ${routines ? `<div class="em-group"><h3>Rotinas</h3>${routines}</div>` : ''}
+    ${groups || '<div class="empty">Nenhum e-mail triado ainda — roda uma triagem pra popular esta aba.</div>'}
+  </div>`;
+}
+
+// transforma URLs em links clicáveis (resultado do check vem como texto puro)
+function linkify(s) {
+  return esc(s).replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+}
+
+async function renderEmail(main) {
+  if (EMAIL_BUSY) return; // não redesenha no meio de uma checagem (apagaria o andamento)
+  if (EMAIL_DATA) { main.innerHTML = emailHTML(EMAIL_DATA); bindEmail(main); } // cache já
+  else main.innerHTML = '<div class="empty">Carregando e-mail…</div>';
+  try { EMAIL_DATA = await api('/api/email/summary'); } catch { return; }
+  if (VIEW !== 'email' || EMAIL_BUSY) return;
+  main.innerHTML = emailHTML(EMAIL_DATA);
+  bindEmail(main);
+}
+
+function bindEmail(main) {
+  const btnCheck = $('#em-check', main);
+  if (btnCheck) btnCheck.onclick = async () => {
+    if (EMAIL_BUSY) return;
+    EMAIL_BUSY = true;
+    $('#em-msg').textContent = 'checando a caixa… (~30s)';
+    try {
+      const { id } = await post('/api/email/enqueue', { kind: 'check_now' });
+      for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const job = await api(`/api/email/job?id=${id}`);
+        if (job.status === 'done') { EMAIL_CHECK_OUT = linkify(job.result || ''); $('#em-checkout').innerHTML = `<div class="em-out">${EMAIL_CHECK_OUT}</div>`; $('#em-msg').textContent = ''; break; }
+        if (job.status === 'error') { $('#em-msg').textContent = 'erro: ' + (job.error || '?'); break; }
+        if (i === 29) $('#em-msg').textContent = 'demorando… o worker deve estar ocupado; tenta de novo já já.';
+      }
+    } catch (e) { $('#em-msg').textContent = 'erro ao enfileirar'; }
+    EMAIL_BUSY = false;
+  };
+  const btnTriage = $('#em-triage', main);
+  if (btnTriage) btnTriage.onclick = async () => {
+    if (!confirm('Rodar a triagem completa agora? Demora alguns minutos; o relatório chega no Telegram.')) return;
+    await post('/api/email/enqueue', { kind: 'triage', notify: true });
+    $('#em-msg').textContent = 'triagem enfileirada — relatório chega no Telegram 📬';
+  };
+  main.querySelectorAll('.em-save-routine').forEach((b) => b.onclick = async () => {
+    const row = b.closest('.em-routine');
+    const times = row.querySelector('.em-times').value.split(',').map((t) => t.trim()).filter(Boolean);
+    if (times.some((t) => !/^\d{2}:\d{2}$/.test(t))) { alert('horários no formato HH:MM, separados por vírgula'); return; }
+    await post('/api/email/routine', { name: row.dataset.routine, times, enabled: row.querySelector('.em-enabled').checked });
+    b.textContent = 'salvo ✓'; setTimeout(() => (b.textContent = 'salvar'), 1500);
+  });
+}
+
 /* ================= chat com o gerente ================= */
 const AGENT = 'https://iucqufccyboilasswnun.supabase.co/functions/v1/telegram';
 let CHAT_OPEN = false;
@@ -908,6 +1163,10 @@ $('#c-text').addEventListener('keydown', (e) => {
 
 /* ================= chrome ================= */
 $('#nav').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  TAB = b.dataset.tab; render();
+});
+$('#subnav').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return;
   VIEW = b.dataset.view; render();
 });
