@@ -81,6 +81,8 @@
   .col-head .count { color: var(--muted); font-size: 12px; margin-left: auto; }
   .col-body { display: flex; flex-direction: column; gap: 10px; min-height: 60px; border-radius: 12px; }
   .col-body.dragover { outline: 2px dashed var(--accent); outline-offset: 4px; }
+  .card.dragging { opacity: .45; }
+  .card.drop-above { box-shadow: 0 -3px 0 0 var(--accent); }
 
   .card {
     background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px;
@@ -273,6 +275,10 @@
   .em-out { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12.5px; background: var(--page); border: 1px solid var(--grid); border-radius: 10px; padding: 12px 14px; max-height: 420px; overflow-y: auto; }
   .em-out a { color: var(--accent); }
   .em-note { color: var(--muted); font-size: 12.5px; }
+  .em-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .em-acts .btn { font-size: 11.5px; padding: 2px 8px; }
+  .em-item.pend { opacity: .65; }
+  .em-pend { font-size: 12px; color: var(--yellow); align-self: center; }
 
   /* ================= aba hoje ================= */
   #subnav button { padding: 4px 12px; font-size: 12.5px; }
@@ -280,13 +286,20 @@
   .home-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .home-head h2 { margin: 0; font-size: 17px; font-weight: 650; }
   .home-head .em-note { margin-left: auto; }
-  .home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .home-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
   .h-card { border: 1px solid var(--grid); border-radius: 12px; background: var(--page); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .h-card h3 { margin: 0; font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
+  .h-c2 { grid-column: span 2; } .h-c1 { grid-column: span 1; } .h-c3 { grid-column: span 3; }
+  .h-tall { min-height: 170px; }
   .h-big { font-size: 22px; font-weight: 650; line-height: 1.1; }
+  .h-card.mini .h-big { font-size: 16.5px; }
+  .h-card.mini { gap: 3px; }
+  .h-loc { font-size: 13px; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+  .h-loc b { font-size: 19px; font-weight: 650; }
   .h-sub { font-size: 12.5px; color: var(--muted); }
   .h-up { color: var(--red); } .h-down { color: var(--good); }
   .h-span { grid-column: 1 / -1; }
+  @media (max-width: 900px) { .h-c1, .h-c2, .h-c3 { grid-column: 1 / -1; } }
   .h-list { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
   .h-list a { color: var(--ink); text-decoration: none; }
   .h-list a:hover { color: var(--accent); text-decoration: underline; }
@@ -499,13 +512,15 @@ function bindCardClicks(main) {
 }
 
 /* ================= kanban ================= */
+const kanbanSort = (a, b) => ((a.kanban_pos ?? 1e9) - (b.kanban_pos ?? 1e9)) || a.title.localeCompare(b.title, 'pt');
+
 function renderKanban(main) {
   const items0 = visible();
   const known = STATUS.map((s) => s.key);
   const extras = [...new Set(items0.map((t) => t.status))].filter((s) => !known.includes(s));
   const cols = [...STATUS.map((s) => s.key), ...extras];
   main.innerHTML = `<div class="board">` + cols.map((st) => {
-    const items = items0.filter((t) => t.status === st);
+    const items = items0.filter((t) => t.status === st).sort(kanbanSort);
     if (!items.length && !['em andamento', 'a verificar', 'aguardando detalhes', 'concluído'].includes(st)) return '';
     return `<div class="col">
       <div class="col-head"><span class="dot" style="background:${statusColor(st)}"></span><b>${st}</b><span class="count">${items.length}</span></div>
@@ -515,16 +530,40 @@ function renderKanban(main) {
 
   main.querySelectorAll('.card').forEach((el) => {
     el.draggable = true;
-    el.addEventListener('dragstart', (e) => { DRAGGING = true; e.dataTransfer.setData('text/plain', el.dataset.open); });
-    el.addEventListener('dragend', () => setTimeout(() => { DRAGGING = false; }, 50));
+    el.addEventListener('dragstart', (e) => { DRAGGING = true; e.dataTransfer.setData('text/plain', el.dataset.open); el.classList.add('dragging'); });
+    el.addEventListener('dragend', () => { el.classList.remove('dragging'); setTimeout(() => { DRAGGING = false; }, 50); });
   });
+  // card que fica logo ABAIXO do cursor (pra soltar antes dele; null = fim da coluna)
+  const afterEl = (col, y) => [...col.querySelectorAll('.card:not(.dragging)')]
+    .find((c) => y < c.getBoundingClientRect().top + c.getBoundingClientRect().height / 2) || null;
   main.querySelectorAll('.col-body').forEach((col) => {
-    col.addEventListener('dragover', (e) => { e.preventDefault(); col.classList.add('dragover'); });
-    col.addEventListener('dragleave', () => col.classList.remove('dragover'));
+    col.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      col.classList.add('dragover');
+      col.querySelectorAll('.drop-above').forEach((c) => c.classList.remove('drop-above'));
+      const after = afterEl(col, e.clientY);
+      if (after) after.classList.add('drop-above');
+    });
+    col.addEventListener('dragleave', () => { col.classList.remove('dragover'); col.querySelectorAll('.drop-above').forEach((c) => c.classList.remove('drop-above')); });
     col.addEventListener('drop', async (e) => {
-      e.preventDefault(); col.classList.remove('dragover');
+      e.preventDefault();
+      col.classList.remove('dragover');
+      col.querySelectorAll('.drop-above').forEach((c) => c.classList.remove('drop-above'));
       const slug = e.dataTransfer.getData('text/plain');
-      await post('/api/task/update', { slug, status: col.dataset.status });
+      const t = bySlug(slug);
+      if (!t) return;
+      const after = afterEl(col, e.clientY);
+      // ordem final da coluna: todos menos o arrastado, com ele inserido na posição do drop
+      const order = [...col.querySelectorAll('.card')].map((c) => c.dataset.open).filter((s) => s !== slug);
+      order.splice(after ? order.indexOf(after.dataset.open) : order.length, 0, slug);
+      const newStatus = col.dataset.status;
+      const oldStatus = t.status;
+      // otimista: reflete já na tela, salva em seguida
+      t.status = newStatus;
+      order.forEach((s, i) => { const x = bySlug(s); if (x) x.kanban_pos = (i + 1) * 10; });
+      render();
+      if (newStatus !== oldStatus) await post('/api/task/update', { slug, status: newStatus });
+      await post('/api/kanban/reorder', { slugs: order });
       load();
     });
   });
@@ -911,15 +950,43 @@ const HOME = { weather: null, dollar: null, news: null, ts: 0, loading: false };
 const HOME_TTL = 15 * 60 * 1000; // clima/dólar/notícias renovam a cada 15 min
 const WMO = { 0: '☀️ céu limpo', 1: '🌤 quase limpo', 2: '⛅ parc. nublado', 3: '☁️ nublado', 45: '🌫 névoa', 48: '🌫 névoa', 51: '🌦 garoa', 53: '🌦 garoa', 55: '🌦 garoa', 61: '🌧 chuva fraca', 63: '🌧 chuva', 65: '🌧 chuva forte', 66: '🌧 chuva gelada', 67: '🌧 chuva gelada', 80: '🌦 pancadas', 81: '🌧 pancadas', 82: '⛈ pancadas fortes', 95: '⛈ tempestade', 96: '⛈ tempestade', 99: '⛈ tempestade' };
 
+const meteoURL = (lat, lon) => `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FSao_Paulo&forecast_days=1`;
+
+// posição atual do navegador (se o Felipe permitir); null se negado/indisponível
+function getPosition() {
+  return new Promise((res) => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(
+      (p) => res({ lat: p.coords.latitude, lon: p.coords.longitude }),
+      () => res(null),
+      { timeout: 6000, maximumAge: 15 * 60 * 1000 },
+    );
+  });
+}
+
+async function loadHere() {
+  const pos = await getPosition();
+  if (!pos) return null;
+  const [w, g] = await Promise.allSettled([
+    fetch(meteoURL(pos.lat.toFixed(3), pos.lon.toFixed(3))).then((r) => r.json()),
+    fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.lat}&longitude=${pos.lon}&localityLanguage=pt`).then((r) => r.json()),
+  ]);
+  if (w.status !== 'fulfilled') return null;
+  const name = g.status === 'fulfilled' ? (g.value.city || g.value.locality || 'onde você está') : 'onde você está';
+  return { name, data: w.value };
+}
+
 async function loadHome(force = false) {
   if (HOME.loading || (!force && HOME.ts && Date.now() - HOME.ts < HOME_TTL)) return false;
   HOME.loading = true;
-  const [w, d, n] = await Promise.allSettled([
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=-20.3155&longitude=-40.3128&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FSao_Paulo&forecast_days=1').then((r) => r.json()),
+  const [w, h, d, n] = await Promise.allSettled([
+    fetch(meteoURL('-20.3155', '-40.3128')).then((r) => r.json()),
+    loadHere(),
     fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL').then((r) => r.json()),
     api('/api/home/news'),
   ]);
   HOME.weather = w.status === 'fulfilled' ? w.value : null;
+  HOME.here = h.status === 'fulfilled' ? h.value : null;
   HOME.dollar = d.status === 'fulfilled' ? (d.value.USDBRL || null) : null;
   HOME.news = n.status === 'fulfilled' ? n.value : null;
   HOME.ts = Date.now();
@@ -945,26 +1012,33 @@ function homeAgenda() {
   return items.sort((a, b) => (a.late === b.late ? 0 : a.late ? -1 : 1));
 }
 
+function locHTML(label, data, extra = '') {
+  const cur = data?.current, day = data?.daily;
+  if (!cur) return '';
+  const desc = WMO[cur.weather_code] || '—';
+  const det = day ? ` <span class="h-sub">máx ${Math.round(day.temperature_2m_max?.[0] ?? 0)}° · mín ${Math.round(day.temperature_2m_min?.[0] ?? 0)}° · 🌧 ${day.precipitation_probability_max?.[0] ?? '–'}%</span>` : '';
+  return `<div class="h-loc"><b>${Math.round(cur.temperature_2m)}°</b> ${desc} · ${esc(label)}${extra}${det}</div>`;
+}
+
 function homeHTML() {
   const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long' });
-  const w = HOME.weather;
-  const cur = w?.current, day = w?.daily;
-  const clima = cur ? `
-    <div class="h-big">${Math.round(cur.temperature_2m)}°C</div>
-    <div class="h-sub">${WMO[cur.weather_code] || '—'} · Vitória/ES</div>
-    <div class="h-sub">máx ${Math.round(day?.temperature_2m_max?.[0] ?? 0)}° · mín ${Math.round(day?.temperature_2m_min?.[0] ?? 0)}° · 🌧 ${day?.precipitation_probability_max?.[0] ?? '–'}%</div>`
+  const clima = (HOME.weather || HOME.here)
+    ? locHTML('Vitória/ES', HOME.weather) +
+      (HOME.here ? locHTML(`📍 ${HOME.here.name}`, HOME.here.data)
+        : '<div class="h-sub">📍 permita a localização no navegador pra ver o tempo de onde você estiver</div>')
     : `<div class="h-sub">${HOME.ts ? 'sem dados de clima' : 'carregando…'}</div>`;
   const dlr = HOME.dollar;
   const pct = dlr ? Number(dlr.pctChange) : 0;
   const dolar = dlr ? `
     <div class="h-big">R$ ${Number(dlr.bid).toFixed(2)}</div>
-    <div class="h-sub"><span class="${pct >= 0 ? 'h-up' : 'h-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span> hoje · comercial</div>`
+    <div class="h-sub"><span class="${pct >= 0 ? 'h-up' : 'h-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span> hoje</div>`
     : `<div class="h-sub">${HOME.ts ? 'sem cotação' : 'carregando…'}</div>`;
   const ag = homeAgenda();
-  const agenda = (ag.length ? `<div class="h-list">${ag.slice(0, 8).map((i) =>
+  const tarefas = ag.length ? `<div class="h-list">${ag.slice(0, 10).map((i) =>
     `<div class="h-item"><span class="h-when ${i.late ? 'late' : ''}">${esc(i.when)}</span><a href="#" data-open-task="${esc(i.slug)}">${esc(i.title)}</a></div>`).join('')}</div>`
-    : '<div class="h-sub">nada com prazo pra hoje 🎉</div>') +
-    '<div class="h-gcal">📅 Google Calendar — espaço reservado (sincronização em breve)</div>';
+    : '<div class="h-sub">nada com prazo pra hoje 🎉</div>';
+  const gcal = `<div class="h-gcal" style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center">
+    Seu Google Calendar vai aparecer aqui —<br>sincronização na próxima fase (OAuth)</div>`;
   const unent = (s) => { const d = document.createElement('textarea'); d.innerHTML = String(s ?? ''); return d.value; };
   const news = HOME.news?.length ? `<div class="h-list">${HOME.news.slice(0, 9).map((n) =>
     `<div class="h-item"><span class="src">${esc(n.source)}</span><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(unent(n.title))}</a></div>`).join('')}</div>`
@@ -974,10 +1048,11 @@ function homeHTML() {
       <span class="em-note" id="h-refresh-note">${HOME.ts ? 'atualizado ' + new Date(HOME.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
       <button class="btn small" id="h-refresh">↻ atualizar</button></div>
     <div class="home-grid">
-      <div class="h-card"><h3>🌤 Tempo</h3>${clima}</div>
-      <div class="h-card"><h3>💵 Dólar</h3>${dolar}</div>
-      <div class="h-card"><h3>📅 Agenda de hoje</h3>${agenda}</div>
-      <div class="h-card h-span"><h3>📰 Notícias</h3>${news}</div>
+      <div class="h-card h-c2"><h3>🌤 Tempo</h3>${clima}</div>
+      <div class="h-card h-c1 mini"><h3>💵 Dólar</h3>${dolar}</div>
+      <div class="h-card h-c3 h-tall"><h3>📅 Agenda (Google)</h3>${gcal}</div>
+      <div class="h-card h-c3 h-tall"><h3>✅ Tarefas & projetos de hoje</h3>${tarefas}</div>
+      <div class="h-card h-c3 h-tall"><h3>📰 Notícias</h3>${news}</div>
     </div>
   </div>`;
 }
@@ -1010,14 +1085,28 @@ const IMP = [
   { key: 'info',    label: 'ℹ️ Outros triados' },
 ];
 
+const EMAIL_PENDING = new Map(); // spark_id -> acao escolhida (aplica em lote no worker)
+const EM_ACTS = [
+  { act: 'markAsSeen', label: '✓ lido' },
+  { act: 'archive', label: '📥 arquivar' },
+  { act: 'markAsSpam', label: '🚫 spam' },
+  { act: 'moveToTrash', label: '🗑 lixo' },
+];
+
 function emItemHTML(m) {
   const from = m.from_name || m.from_addr || '?';
   const when = m.email_date ? fmtDateTime(m.email_date) : '';
-  return `<div class="em-item ${esc(m.importance)}">
-    <span class="em-sub">${esc(m.subject || '(sem assunto)')}</span>
+  const pend = m.spark_id ? EMAIL_PENDING.get(m.spark_id) : null;
+  const acts = m.spark_id ? `<div class="em-acts">${pend
+    ? `<span class="em-pend">${esc(EM_ACTS.find((a) => a.act === pend)?.label || pend)} pendente</span><button class="btn small em-act" data-id="${m.spark_id}" data-act="">desfazer</button>`
+    : EM_ACTS.map((a) => `<button class="btn small em-act" data-id="${m.spark_id}" data-act="${a.act}">${a.label}</button>`).join('')
+  }</div>` : '';
+  return `<div class="em-item ${esc(m.importance)} ${pend ? 'pend' : ''}">
+    <span class="em-sub">${esc(m.subject || '(sem assunto)')}${m.unread === false ? ' <span class="em-meta">· lido</span>' : ''}</span>
     <span class="em-meta">${esc(from)}${m.account ? ' · ' + esc(m.account) : ''}${when ? ' · ' + when : ''}</span>
     ${m.summary ? `<span class="em-sum">${esc(m.summary)}</span>` : ''}
     ${m.spark_link ? `<a href="${esc(m.spark_link)}" target="_blank" rel="noopener">Abrir no Spark ↗</a>` : ''}
+    ${acts}
   </div>`;
 }
 
@@ -1048,6 +1137,7 @@ function emailHTML(d) {
     <div class="em-actions">
       <button class="btn primary" id="em-check" ${w.online ? '' : 'disabled title="worker offline"'}>📥 Checar caixa agora</button>
       <button class="btn" id="em-triage" ${w.online ? '' : 'disabled title="worker offline"'}>🧹 Triagem completa agora</button>
+      ${EMAIL_PENDING.size ? `<button class="btn primary" id="em-apply" ${w.online ? '' : 'disabled title="worker offline"'}>✔ Aplicar ${EMAIL_PENDING.size} ação(ões) no Spark</button>` : ''}
       <span class="em-note" id="em-msg"></span>
     </div>
     <div id="em-checkout">${EMAIL_CHECK_OUT ? `<div class="em-out">${EMAIL_CHECK_OUT}</div>` : ''}</div>
@@ -1066,7 +1156,7 @@ async function renderEmail(main) {
   if (EMAIL_DATA) { main.innerHTML = emailHTML(EMAIL_DATA); bindEmail(main); } // cache já
   else main.innerHTML = '<div class="empty">Carregando e-mail…</div>';
   try { EMAIL_DATA = await api('/api/email/summary'); } catch { return; }
-  if (VIEW !== 'email' || EMAIL_BUSY) return;
+  if (TAB !== 'email' || EMAIL_BUSY) return;
   main.innerHTML = emailHTML(EMAIL_DATA);
   bindEmail(main);
 }
@@ -1094,6 +1184,43 @@ function bindEmail(main) {
     if (!confirm('Rodar a triagem completa agora? Demora alguns minutos; o relatório chega no Telegram.')) return;
     await post('/api/email/enqueue', { kind: 'triage', notify: true });
     $('#em-msg').textContent = 'triagem enfileirada — relatório chega no Telegram 📬';
+  };
+  // marcar/desmarcar ações pendentes nos e-mails
+  main.querySelectorAll('.em-act').forEach((b) => b.onclick = () => {
+    const id = Number(b.dataset.id);
+    if (b.dataset.act) EMAIL_PENDING.set(id, b.dataset.act);
+    else EMAIL_PENDING.delete(id);
+    main.innerHTML = emailHTML(EMAIL_DATA);
+    bindEmail(main);
+  });
+  const btnApply = $('#em-apply', main);
+  if (btnApply) btnApply.onclick = async () => {
+    if (EMAIL_BUSY || !EMAIL_PENDING.size) return;
+    EMAIL_BUSY = true;
+    $('#em-msg').textContent = 'aplicando no Spark…';
+    try {
+      // agrupa por ação -> um job por ação
+      const groups = {};
+      for (const [id, act] of EMAIL_PENDING) (groups[act] ||= []).push(id);
+      const jobs = [];
+      for (const [act, ids] of Object.entries(groups)) {
+        const { id } = await post('/api/email/enqueue', { kind: 'action', params: { action: act, ids } });
+        jobs.push(id);
+      }
+      for (let i = 0; i < 40 && jobs.length; i++) {
+        await new Promise((r) => setTimeout(r, 2500));
+        for (const jid of [...jobs]) {
+          const j = await api(`/api/email/job?id=${jid}`);
+          if (j.status === 'done') jobs.splice(jobs.indexOf(jid), 1);
+          if (j.status === 'error') { $('#em-msg').textContent = 'erro: ' + (j.error || '?'); jobs.splice(jobs.indexOf(jid), 1); }
+        }
+      }
+      EMAIL_PENDING.clear();
+      $('#em-msg').textContent = 'aplicado ✓';
+    } catch (e) { $('#em-msg').textContent = 'erro ao aplicar'; }
+    EMAIL_BUSY = false;
+    EMAIL_DATA = await api('/api/email/summary').catch(() => EMAIL_DATA);
+    if (TAB === 'email') { main.innerHTML = emailHTML(EMAIL_DATA); bindEmail(main); }
   };
   main.querySelectorAll('.em-save-routine').forEach((b) => b.onclick = async () => {
     const row = b.closest('.em-routine');
