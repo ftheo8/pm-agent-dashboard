@@ -387,7 +387,8 @@
   .lg-note { font-size: 11px; color: var(--muted); }
 
   .avs { display: inline-flex; margin-left: 2px; }
-  .avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--violet); color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-left: -4px; border: 1.5px solid var(--surface-1); }
+  .avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--violet); color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-left: -4px; border: 1.5px solid var(--surface-1); object-fit: cover; }
+  .avatar.me { width: 26px; height: 26px; font-size: 12px; margin-left: 0; vertical-align: middle; }
   .as-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--baseline); border-radius: 999px; padding: 4px 10px; margin: 2px 4px 2px 0; font-size: 12.5px; cursor: pointer; }
   .as-chip input { accent-color: var(--accent); }
 
@@ -532,7 +533,7 @@ function applyRole() {
   const el = (s) => document.querySelector(s);
   el('#nav [data-tab="email"]').style.display = adm ? '' : 'none';
   el('#subnav [data-view="projetos"]').style.display = adm ? '' : 'none';
-  el('#btn-pvt').style.display = adm ? '' : 'none';
+  el('#btn-pvt').style.display = ''; // modo privado é de todos (cada um vê só as suas)
   el('#user-chip') && (el('#user-chip').textContent = ME ? ME.name || ME.username : '');
 }
 let TASKS = [];
@@ -607,7 +608,7 @@ const distinct = (field) => [...new Set(TASKS.map((t) => t[field]).filter(Boolea
 function renderFilters() {
   const opt = (v, label, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(label)}</option>`;
   $('#f-empresa').innerHTML = opt('', 'empresa: todas', FILTERS.empresa) + distinct('empresa').map((e) => opt(e, e, FILTERS.empresa)).join('');
-  $('#f-projeto').innerHTML = opt('', 'projeto: todos', FILTERS.projeto) + distinct('projeto').map((p) => opt(p, p, FILTERS.projeto)).join('');
+  $('#f-projeto').innerHTML = opt('', 'assunto: todos', FILTERS.projeto) + distinct('projeto').map((p) => opt(p, p, FILTERS.projeto)).join('');
   const sts = [...new Set(TASKS.map((t) => t.status))];
   $('#f-status').innerHTML = opt('', 'status: todos', FILTERS.status) + STATUS.filter((s) => sts.includes(s.key)).map((s) => opt(s.key, s.key, FILTERS.status)).join('');
   $('#f-clear').classList.toggle('on', Boolean(FILTERS.q || FILTERS.empresa || FILTERS.projeto || FILTERS.status || FILTERS.prazo));
@@ -636,6 +637,7 @@ async function load() {
   TASKS = tasks;
   PROJECTS = projects || [];
   USERS = (users || []).filter((u) => u.active !== false);
+  if (ME) { const self = USERS.find((u) => u.id === ME.id); if (self && self.avatar !== undefined) ME.avatar = self.avatar; }
   TASKS.sort((a, b) => a.title.localeCompare(b.title, 'pt'));
   $('#meta').textContent = `${visible().length} projetos · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   renderFilters();
@@ -736,7 +738,11 @@ const projById = (id) => PROJECTS.find((p) => p.id === id);
 const userById = (id) => USERS.find((u) => u.id === id);
 const avatarHTML = (uid) => {
   const u = userById(uid);
-  return u ? `<span class="avatar" title="${esc(u.name || u.username)}">${esc((u.name || u.username).slice(0, 1).toUpperCase())}</span>` : '';
+  if (!u) return '';
+  const tip = esc(u.name || u.username);
+  return u.avatar
+    ? `<img class="avatar" src="${u.avatar}" title="${tip}" alt="${tip}">`
+    : `<span class="avatar" title="${tip}">${esc((u.name || u.username).slice(0, 1).toUpperCase())}</span>`;
 };
 
 function cardHTML(t) {
@@ -1122,14 +1128,14 @@ function renderModal(slug) {
       </div>
       <div class="m-row">
         <div class="field"><label>Empresa</label><input type="text" id="m-empresa" list="dl-empresa" value="${esc(t?.empresa ?? '')}" placeholder="ex: SBY"></div>
-        <div class="field"><label>Projeto</label><input type="text" id="m-projeto" list="dl-projeto" value="${esc(t?.projeto ?? '')}" placeholder="ex: Edital FINEP"></div>
+        <div class="field"><label>Assunto (etiqueta)</label><input type="text" id="m-projeto" list="dl-projeto" value="${esc(t?.projeto ?? '')}" placeholder="ex: Edital FINEP"></div>
         <datalist id="dl-empresa">${distinct('empresa').map((e) => `<option value="${esc(e)}">`).join('')}</datalist>
         <datalist id="dl-projeto">${distinct('projeto').map((p) => `<option value="${esc(p)}">`).join('')}</datalist>
       </div>
-      ${PROJECTS.length ? `<div class="m-row">
-        <div class="field" style="flex:1 1 100%"><label>🗂 Projeto (estrutura — aparece na visão Projetos)</label>
-        <select id="m-project">${projSelOptions(t ? t.project_id : (VIEW === 'projetos' && PROJ_OPEN ? PROJ_OPEN : null))}</select></div>
-      </div>` : ''}
+      <div class="m-row">
+        <div class="field" style="flex:1 1 100%"><label>🗂 Projeto / subprojeto (estrutura — aba Projetos)</label>
+        <select id="m-project">${projSelOptions(t ? t.project_id : (VIEW === 'projetos' && PROJ_OPEN ? PROJ_OPEN : null))}<option value="__new__">＋ criar projeto novo…</option></select></div>
+      </div>
       <div class="m-row">
         <div class="field"><label>Prazo (data exata)</label><div class="datewrap"><input type="date" id="m-prazo-date" value="${t?.prazo.date ?? ''}"><button type="button" class="cal-btn" data-pick="m-prazo-date" title="abrir calendário">📅</button></div></div>
         <div class="field"><label>ou mês</label><div class="datewrap"><input type="month" id="m-prazo-month" value="${t?.prazo.month ?? ''}"><button type="button" class="cal-btn" data-pick="m-prazo-month" title="abrir calendário">📅</button></div></div>
@@ -1201,7 +1207,7 @@ function renderModal(slug) {
 
     <div class="m-footer">
       <button class="btn" id="m-arch">${t.archived ? 'Restaurar' : 'Arquivar'}</button>
-      ${isAdm() ? `<button class="btn" id="m-pvt">${t.private ? '🔓 Tirar do privado' : '🔒 Mover pro privado'}</button>` : ''}
+      ${t.owner_id === ME?.id ? `<button class="btn" id="m-pvt">${t.private ? '🔓 Tirar do privado' : '🔒 Mover pro privado'}</button>` : ''}
       <span class="spacer"></span>
       <button class="btn danger" id="m-del">Apagar de vez</button>
     </div>`}
@@ -1209,6 +1215,26 @@ function renderModal(slug) {
 
   /* ------- binds ------- */
   $('#m-close').onclick = closeModal;
+
+  const pjSelEl = $('#m-project');
+  if (pjSelEl) pjSelEl.onchange = async () => {
+    if (pjSelEl.value !== '__new__') return;
+    const name = prompt('Nome do projeto novo:');
+    if (!name || !name.trim()) { pjSelEl.value = t?.project_id || ''; return; }
+    let parent_id = null;
+    if (PROJECTS.length) {
+      const guess = prompt('Subprojeto de qual projeto? Digite parte do nome, ou deixe vazio para criar na raiz:');
+      if (guess && guess.trim()) {
+        const g = guess.trim().toLowerCase();
+        const p = PROJECTS.find((x) => x.name.toLowerCase().includes(g));
+        if (p) parent_id = p.id;
+        else if (!confirm('Não achei esse projeto pai. Criar na raiz mesmo?')) { pjSelEl.value = t?.project_id || ''; return; }
+      }
+    }
+    const r = await post('/api/project/create', { name: name.trim(), parent_id });
+    PROJECTS = await api('/api/projects').catch(() => PROJECTS);
+    pjSelEl.innerHTML = projSelOptions(r.id) + '<option value="__new__">＋ criar projeto novo…</option>';
+  };
 
   $('#m-save').onclick = async () => {
     const body = {
@@ -1788,22 +1814,8 @@ $('#login-card').addEventListener('submit', async (e) => {
 });
 
 $('#btn-pvt').onclick = async () => {
-  if (!PVT) {
-    if (!sessionStorage.getItem('iago_pvt_ok')) {
-      const pw = prompt('Senha para entrar no modo privado:');
-      if (!pw) return;
-      const res = await fetch(`${API}/api/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: ME?.username || 'felipe', password: pw, verify_only: true }),
-      }).catch(() => null);
-      if (!res || !res.ok) { alert('senha incorreta'); return; }
-      sessionStorage.setItem('iago_pvt_ok', '1'); // vale só nesta aba, até fechar
-    }
-    PVT = true;
-    TAB = 'projetos'; VIEW = 'kanban'; PROJ_OPEN = null;
-  } else {
-    PVT = false;
-  }
+  PVT = !PVT;
+  if (PVT) { TAB = 'projetos'; VIEW = 'kanban'; PROJ_OPEN = null; }
   document.body.classList.toggle('pvt', PVT);
   $('#btn-pvt').textContent = PVT ? '🔓 sair' : '🔒';
   closeModal();
@@ -1823,13 +1835,22 @@ function renderSettings() {
         <input type="text" id="nu-pass" placeholder="senha inicial" style="flex:1">
         <button class="btn small primary" id="nu-add">criar usuário</button>
       </div>
-      <div class="muted-note" style="margin-top:6px">Telegram: a pessoa abre o bot <b>@botianews_bot</b> e manda o <b>código</b> dela (1x só). O IAGO passa a conversar com ela vendo apenas as tarefas dela.</div>
+      <div class="muted-note" style="margin-top:6px">Telegram: a pessoa abre o <b>bot do IAGO</b> no Telegram (hoje @botianews_bot — se o @ mudar, vale o novo) e manda o <b>código</b> dela (1x só). O IAGO passa a conversar com ela vendo apenas as tarefas dela.</div>
     </div>`;
   $('#modal').innerHTML = `
     <button class="m-close" id="m-close">×</button>
     <h2>⚙️ Configurações</h2>
     <div class="muted-note">conectado como <b>${esc(ME?.name || ME?.username || 'admin')}</b>${adm ? ' · admin' : ''}</div>
     ${admHTML}
+    <div class="m-sec">
+      <h4>🖼 Minha foto</h4>
+      <div class="m-row" style="align-items:center">
+        <span id="my-av">${ME?.avatar ? `<img class="avatar me" src="${ME.avatar}">` : `<span class="avatar me">${esc((ME?.name || '?').slice(0, 1).toUpperCase())}</span>`}</span>
+        <input type="file" id="av-file" accept="image/*" style="flex:1">
+        <button class="btn small" id="av-save">salvar foto</button>
+        <button class="btn small" id="av-del">remover</button>
+      </div>
+    </div>
     <div class="m-sec">
       <h4>🔑 Minha senha</h4>
       <div class="m-row">
@@ -1845,6 +1866,29 @@ function renderSettings() {
   $('#overlay').classList.add('open');
   $('#m-close').onclick = closeModal;
   $('#btn-logout').onclick = () => { if (confirm('Sair do IAGO neste navegador?')) logout(); };
+  $('#av-save').onclick = async () => {
+    const f = $('#av-file').files[0];
+    if (!f) { alert('escolha uma imagem'); return; }
+    const img = new Image();
+    img.onload = async () => {
+      const c = document.createElement('canvas');
+      c.width = c.height = 96;
+      const s = Math.min(img.width, img.height);
+      c.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, 96, 96);
+      const data = c.toDataURL('image/jpeg', 0.82);
+      await post('/api/user/avatar', { data });
+      if (ME) { ME.avatar = data; localStorage.setItem('iago_user', JSON.stringify(ME)); }
+      $('#my-av').innerHTML = `<img class="avatar me" src="${data}">`;
+      load();
+    };
+    img.src = URL.createObjectURL(f);
+  };
+  $('#av-del').onclick = async () => {
+    await post('/api/user/avatar', { data: '' });
+    if (ME) { ME.avatar = ''; localStorage.setItem('iago_user', JSON.stringify(ME)); }
+    $('#my-av').innerHTML = `<span class="avatar me">${esc((ME?.name || '?').slice(0, 1).toUpperCase())}</span>`;
+    load();
+  };
   $('#pw-save').onclick = async () => {
     const current = $('#pw-cur').value, password = $('#pw-new').value;
     if (!current || password.length < 6) { alert('preencha a senha atual e uma nova com pelo menos 6 caracteres'); return; }
@@ -1897,7 +1941,7 @@ async function boot() {
   if (!TOKEN && !KEY) { showLogin(); return; }
   try {
     const me = await api('/api/auth/me');
-    ME = me.user;
+    ME = { ...(ME || {}), ...me.user }; // preserva avatar salvo localmente
     localStorage.setItem('iago_user', JSON.stringify(ME));
   } catch { return; } // 401 já abriu o login
   applyRole();
