@@ -290,6 +290,49 @@
   .em-item.pend { opacity: .65; }
   .em-pend { font-size: 12px; color: var(--yellow); align-self: center; }
 
+  /* ================= quick-done + plataforma de projetos ================= */
+  .card { position: relative; }
+  .qdone {
+    position: absolute; top: 8px; right: 8px; width: 22px; height: 22px;
+    border-radius: 50%; border: 1.5px solid var(--baseline); background: transparent;
+    color: transparent; font-size: 13px; line-height: 1; cursor: pointer; padding: 0;
+  }
+  .qdone:hover { border-color: var(--good); color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+  .qdone.qd-inline { position: static; flex: none; }
+  .card h3 { padding-right: 26px; }
+  .tagchip.pnode { background: color-mix(in srgb, var(--violet) 18%, transparent); cursor: pointer; }
+
+  .pj-wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .pj-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pj-head h2 { margin: 0; font-size: 18px; flex: 1; min-width: 0; }
+  .pj-crumbs { font-size: 12.5px; color: var(--muted); }
+  .pj-crumbs a { color: var(--accent); text-decoration: none; }
+  .pj-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 12px; border: 1px dashed var(--baseline); border-radius: 10px; }
+  .pj-form input[type=text] { flex: 1; min-width: 180px; }
+  .pj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .pj-card { border: 1px solid var(--grid); border-radius: 12px; background: var(--page); padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+  .pj-card:hover { border-color: var(--accent); }
+  .pj-top { display: flex; align-items: center; gap: 8px; }
+  .pj-top h3 { margin: 0; font-size: 14px; flex: 1; min-width: 0; }
+  .pj-badge { font-size: 10.5px; color: #fff; border-radius: 999px; padding: 2px 8px; flex: none; }
+  .pj-bar { height: 6px; border-radius: 999px; background: var(--grid); overflow: hidden; }
+  .pj-bar i { display: block; height: 100%; background: var(--good); border-radius: 999px; }
+  .pj-bar.big { height: 10px; }
+  .pj-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pj-stat { border: 1px solid var(--grid); border-radius: 10px; padding: 8px 14px; text-align: center; background: var(--page); }
+  .pj-stat b { display: block; font-size: 16px; }
+  .pj-stat span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .pj-stat.late b { color: var(--red); }
+  .pj-sec h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 8px; }
+  .pj-tasks { display: flex; flex-direction: column; gap: 6px; }
+  .pj-task { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--grid); border-radius: 9px; background: var(--page); font-size: 13px; flex-wrap: wrap; }
+  .pj-task a { color: var(--ink); text-decoration: none; flex: 1; min-width: 140px; }
+  .pj-task a:hover { color: var(--accent); }
+  .pj-task.done a { color: var(--muted); text-decoration: line-through; }
+  .pj-ok { color: var(--good); width: 22px; text-align: center; flex: none; }
+  .pj-node { font-size: 11px; color: var(--violet); border: 1px solid color-mix(in srgb, var(--violet) 40%, transparent); border-radius: 999px; padding: 1px 7px; }
+  .pj-status-sel { max-width: 120px; }
+
   /* ================= aba hoje ================= */
   #subnav button { padding: 4px 12px; font-size: 12.5px; }
   .home-wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
@@ -333,6 +376,7 @@
     <button data-view="cards">Cards</button>
     <button data-view="agenda">Agenda</button>
     <button data-view="gantt">Gantt</button>
+    <button data-view="projetos">🗂 Projetos</button>
   </nav>
   <button class="btn primary" id="btn-new">+ Novo</button>
   <button class="btn" id="btn-chat">💬 Chat</button>
@@ -406,6 +450,8 @@ if (!KEY) { // primeiro acesso sem ?key= — pede e guarda no navegador
   if (KEY) localStorage.setItem('pm_key', KEY);
 }
 let TASKS = [];
+let PROJECTS = [];    // entidade Projeto (hierarquia própria; tarefas vinculam por project_id)
+let PROJ_OPEN = null; // id do projeto aberto na página ampla
 let TAB = 'hoje';     // hoje | projetos | email
 let VIEW = 'kanban';  // subview da aba projetos
 let SHOW_ARCH = false;
@@ -496,7 +542,12 @@ async function api(path, opts = {}) {
 const post = (path, obj) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
 
 async function load() {
-  TASKS = await api('/api/tasks');
+  const [tasks, projects] = await Promise.all([
+    api('/api/tasks'),
+    api('/api/projects').catch(() => PROJECTS),
+  ]);
+  TASKS = tasks;
+  PROJECTS = projects || [];
   TASKS.sort((a, b) => a.title.localeCompare(b.title, 'pt'));
   $('#meta').textContent = `${visible().length} projetos · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   renderFilters();
@@ -515,6 +566,7 @@ function render() {
   $('#show-arch').closest('label').style.display = proj ? '' : 'none';
   if (TAB === 'hoje') { renderHome(main); return; }
   if (TAB === 'email') { renderEmail(main); return; }
+  if (VIEW === 'projetos') { renderProjetos(main); return; }
   if (!visible().length) { main.innerHTML = '<div class="empty">Nenhum projeto por aqui.</div>'; return; }
   if (VIEW === 'kanban') renderKanban(main);
   else if (VIEW === 'cards') renderCards(main);
@@ -589,22 +641,48 @@ function renderKanban(main) {
     });
   });
   bindCardClicks(main);
+  bindQuickDone(main);
 }
+const projById = (id) => PROJECTS.find((p) => p.id === id);
+
 function cardHTML(t) {
   const p = progress(t);
+  const done = ['concluído', 'mesclado'].includes(t.status);
+  const pj = t.project_id ? projById(t.project_id) : null;
   return `<div class="card" data-open="${t.id}">
+    ${done ? '' : `<button class="qdone" data-qdone="${t.id}" title="marcar como concluído">✓</button>`}
     <h3>${esc(t.title)}</h3>
-    ${t.empresa || t.projeto ? `<div class="sub" style="margin-bottom:6px">${t.empresa ? `<span class="tagchip">${esc(t.empresa)}</span>` : ''}${t.projeto ? `<span class="tagchip proj">${esc(t.projeto)}</span>` : ''}</div>` : ''}
+    ${t.empresa || t.projeto || pj ? `<div class="sub" style="margin-bottom:6px">${t.empresa ? `<span class="tagchip">${esc(t.empresa)}</span>` : ''}${t.projeto ? `<span class="tagchip proj">${esc(t.projeto)}</span>` : ''}${pj ? `<span class="tagchip pnode" data-gopj="${pj.id}">🗂 ${esc(pj.name)}</span>` : ''}</div>` : ''}
     <div class="sub">${prazoChip(t)}${p.total ? `<span>${p.done}/${p.total}</span>` : ''}${t.attachments.length ? `<span class="clip">📎${t.attachments.length}</span>` : ''}${t.archived ? '<span class="arch-badge">ARQ</span>' : ''}</div>
     ${p.total ? `<div class="progress"><i style="width:${p.pct}%;background:${statusColor(t.status)}"></i></div>` : ''}
   </div>`;
+}
+
+// concluir com 1 clique, direto do card (otimista; o kanban recoloca na coluna certa)
+async function quickDone(slug) {
+  const t = bySlug(slug);
+  if (!t || ['concluído', 'mesclado'].includes(t.status)) return;
+  t.status = 'concluído';
+  render();
+  await post('/api/task/update', { slug, status: 'concluído' });
+  load();
+}
+function bindQuickDone(main) {
+  main.querySelectorAll('[data-qdone]').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    quickDone(b.dataset.qdone);
+  }));
+  main.querySelectorAll('[data-gopj]').forEach((el) => el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    PROJ_OPEN = el.dataset.gopj; VIEW = 'projetos'; render();
+  }));
 }
 
 /* ================= cards ================= */
 function renderCards(main) {
   main.innerHTML = `<div class="grid">` + visible().map((t) => `
     <div class="bigcard" data-open="${t.id}">
-      <div class="top"><h3>${esc(t.title)}</h3><span class="status-chip" style="background:${statusColor(t.status)}">${t.status}</span></div>
+      <div class="top"><h3>${esc(t.title)}</h3>${['concluído', 'mesclado'].includes(t.status) ? '' : `<button class="qdone qd-inline" data-qdone="${t.id}" title="marcar como concluído">✓</button>`}<span class="status-chip" style="background:${statusColor(t.status)}">${t.status}</span></div>
       <div class="sub" style="color:var(--muted);font-size:12px">${t.empresa ? `<span class="tagchip">${esc(t.empresa)}</span>` : ''}${t.projeto ? `<span class="tagchip proj">${esc(t.projeto)}</span>` : ''} ${prazoChip(t)} ${t.attachments.length ? `<span class="clip">📎${t.attachments.length}</span>` : ''} ${t.archived ? '<span class="arch-badge">ARQ</span>' : ''}</div>
       <ul class="steps">${t.steps.map((s) => `
         <li class="${s.done ? 'done' : ''}"><input type="checkbox" ${s.done ? 'checked' : ''} data-step="${s.id}"><span>${esc(s.label)}</span></li>`).join('')}
@@ -618,6 +696,7 @@ function renderCards(main) {
     });
   });
   bindCardClicks(main);
+  bindQuickDone(main);
 }
 
 /* ================= agenda ================= */
@@ -674,8 +753,9 @@ function renderAgenda(main) {
 }
 
 /* ================= gantt ================= */
-function renderGantt(main) {
-  const rows = visible().filter((t) => !['mesclado'].includes(t.status) && !t.archived);
+function ganttHTML(rowsInput) {
+  const rows = rowsInput.filter((t) => !['mesclado'].includes(t.status) && !t.archived);
+  if (!rows.length) return '<div class="empty">Nada para mostrar no Gantt.</div>';
   const today = new Date(todayISO());
   const D = 86400000;
   const ends = rows.map((t) => {
@@ -723,7 +803,7 @@ function renderGantt(main) {
       `<line x1="${e + 2}" y1="${yPos + RW / 2}" x2="${e + 40}" y2="${yPos + RW / 2}" stroke="${color}" stroke-width="2" stroke-dasharray="3 4"/>`;
   }).join('');
 
-  main.innerHTML = `<div class="gantt-card">
+  return `<div class="gantt-card">
     <p class="gantt-note">Barra sólida = prazo definido · translúcida = prazo só de mês · tracejada = sem prazo (em aberto). Clique no nome pra abrir os detalhes.</p>
     <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
       ${months}
@@ -732,7 +812,178 @@ function renderGantt(main) {
       ${bars}
     </svg>
   </div>`;
-  main.querySelectorAll('[data-open]').forEach((el) => el.addEventListener('click', () => openModal(el.dataset.open)));
+}
+
+function bindGanttClicks(root) {
+  root.querySelectorAll('[data-open]').forEach((el) => el.addEventListener('click', () => openModal(el.dataset.open)));
+}
+
+function renderGantt(main) {
+  main.innerHTML = ganttHTML(visible());
+  bindGanttClicks(main);
+}
+
+/* ================= 🗂 Projetos (plataforma) ================= */
+const projChildren = (id) => PROJECTS.filter((p) => p.parent_id === (id ?? null));
+function projSubtreeIds(id) {
+  const out = [id];
+  for (const c of projChildren(id)) out.push(...projSubtreeIds(c.id));
+  return out;
+}
+const projTasks = (id) => {
+  const ids = new Set(projSubtreeIds(id));
+  return TASKS.filter((t) => ids.has(t.project_id) && !t.archived);
+};
+function projStats(id) {
+  const ts = projTasks(id);
+  const closed = (t) => ['concluído', 'mesclado'].includes(t.status);
+  const today = todayISO();
+  const done = ts.filter(closed).length;
+  const late = ts.filter((t) => t.prazo.date && t.prazo.date < today && !closed(t)).length;
+  const next = ts.filter((t) => t.prazo.date && t.prazo.date >= today && !closed(t)).map((t) => t.prazo.date).sort()[0] || null;
+  return { total: ts.length, done, late, next, pct: ts.length ? Math.round((done * 100) / ts.length) : 0 };
+}
+const PJ_STATUS = { ativo: 'var(--blue)', pausado: 'var(--yellow)', concluido: 'var(--good)' };
+
+function pjCardHTML(p) {
+  const st = projStats(p.id);
+  const kids = projChildren(p.id).length;
+  return `<div class="pj-card" data-pj="${p.id}">
+    <div class="pj-top"><h3>${esc(p.name)}</h3><span class="pj-badge" style="background:${PJ_STATUS[p.status] || 'var(--muted)'}">${p.status}</span></div>
+    <div class="sub">${p.empresa ? `<span class="tagchip">${esc(p.empresa)}</span>` : ''}${p.prazo_date ? `<span class="prazo-chip">⏱ ${fmtDate(p.prazo_date)}</span>` : ''}</div>
+    <div class="pj-bar"><i style="width:${st.pct}%"></i></div>
+    <div class="sub" style="color:var(--muted)">${st.done}/${st.total} tarefas${st.late ? ` · <b style="color:var(--red)">${st.late} atrasada(s)</b>` : ''}${kids ? ` · ${kids} subprojeto(s)` : ''}</div>
+  </div>`;
+}
+
+function renderProjetos(main) {
+  if (PROJ_OPEN && projById(PROJ_OPEN)) { renderProjectPage(main, projById(PROJ_OPEN)); return; }
+  PROJ_OPEN = null;
+  const roots = projChildren(null);
+  main.innerHTML = `<div class="pj-wrap">
+    <div class="pj-head">
+      <h2>🗂 Projetos</h2>
+      <button class="btn primary" id="pj-new">+ Novo projeto</button>
+    </div>
+    <div id="pj-form" class="pj-form" style="display:none">
+      <input type="text" id="pjf-name" placeholder="nome do projeto (ex: Expansão Stoneberry)">
+      <input type="text" id="pjf-empresa" list="dl-empresa" placeholder="empresa">
+      <input type="date" id="pjf-prazo" title="prazo (opcional)">
+      <button class="btn primary" id="pjf-save">criar</button>
+    </div>
+    ${roots.length
+      ? `<div class="pj-grid">${roots.map(pjCardHTML).join('')}</div>`
+      : '<div class="empty">Nenhum projeto ainda — crie no botão acima ou peça ao gerente no chat ("cria o projeto Expansão Stoneberry com subprojetos Obras e Financeiro").</div>'}
+  </div>`;
+  bindProjetos(main);
+}
+
+function bindProjetos(main) {
+  main.querySelectorAll('[data-pj]').forEach((el) => el.addEventListener('click', () => { PROJ_OPEN = el.dataset.pj; render(); }));
+  const btnNew = $('#pj-new', main);
+  if (btnNew) btnNew.onclick = () => { const f = $('#pj-form', main); f.style.display = f.style.display === 'none' ? 'flex' : 'none'; $('#pjf-name', main)?.focus(); };
+  const btnSave = $('#pjf-save', main);
+  if (btnSave) btnSave.onclick = async () => {
+    const name = $('#pjf-name', main).value.trim();
+    if (!name) { alert('nome obrigatório'); return; }
+    const r = await post('/api/project/create', {
+      name,
+      empresa: $('#pjf-empresa', main).value.trim(),
+      prazo_date: $('#pjf-prazo', main).value || null,
+      parent_id: PROJ_OPEN || null,
+    });
+    PROJ_OPEN = r.id;
+    await load();
+  };
+}
+
+function renderProjectPage(main, p) {
+  const st = projStats(p.id);
+  const kids = projChildren(p.id);
+  const tasks = projTasks(p.id).sort((a, b) => (a.prazo.date || '9999').localeCompare(b.prazo.date || '9999'));
+  const crumbs = [];
+  for (let cur = p; cur; cur = cur.parent_id ? projById(cur.parent_id) : null) crumbs.unshift(cur);
+  const crumbHTML = `<a href="#" data-pjnav="">🗂 Projetos</a>` +
+    crumbs.map((c, i) => ` / ${i === crumbs.length - 1 ? `<b>${esc(c.name)}</b>` : `<a href="#" data-pjnav="${c.id}">${esc(c.name)}</a>`}`).join('');
+  const closed = (t) => ['concluído', 'mesclado'].includes(t.status);
+  const nodeName = (t) => (t.project_id !== p.id && projById(t.project_id)) ? `<span class="pj-node">${esc(projById(t.project_id).name)}</span>` : '';
+
+  main.innerHTML = `<div class="pj-wrap">
+    <div class="pj-crumbs">${crumbHTML}</div>
+    <div class="pj-head">
+      <h2>${esc(p.name)}</h2>
+      <select id="pjp-status" class="pj-status-sel">${['ativo', 'pausado', 'concluido'].map((s) => `<option value="${s}" ${p.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+      <input type="date" id="pjp-prazo" value="${p.prazo_date || ''}" title="prazo do projeto">
+      <button class="btn small" id="pjp-save">salvar</button>
+      <button class="btn small" id="pjp-rename">renomear</button>
+      <button class="btn small danger" id="pjp-del">excluir</button>
+    </div>
+    ${p.descricao ? `<div class="em-note">${esc(p.descricao)}</div>` : ''}
+    <div class="pj-stats">
+      <div class="pj-stat"><b>${st.total}</b><span>tarefas</span></div>
+      <div class="pj-stat"><b>${st.pct}%</b><span>concluído</span></div>
+      <div class="pj-stat ${st.late ? 'late' : ''}"><b>${st.late}</b><span>atrasadas</span></div>
+      <div class="pj-stat"><b>${st.next ? fmtDate(st.next) : '—'}</b><span>próx. prazo</span></div>
+    </div>
+    <div class="pj-bar big"><i style="width:${st.pct}%"></i></div>
+
+    <div class="pj-sec"><h3>Subprojetos</h3>
+      ${kids.length ? `<div class="pj-grid">${kids.map(pjCardHTML).join('')}</div>` : '<div class="em-note">nenhum ainda</div>'}
+      <button class="btn small" id="pjp-newsub" style="margin-top:8px">+ subprojeto</button>
+      <div id="pj-form" class="pj-form" style="display:none;margin-top:8px">
+        <input type="text" id="pjf-name" placeholder="nome do subprojeto (ex: Obras)">
+        <input type="text" id="pjf-empresa" list="dl-empresa" placeholder="empresa" value="${esc(p.empresa)}">
+        <input type="date" id="pjf-prazo">
+        <button class="btn primary" id="pjf-save">criar</button>
+      </div>
+    </div>
+
+    <div class="pj-sec"><h3>Tarefas (${tasks.length}, incluindo subprojetos)</h3>
+      ${tasks.length ? `<div class="pj-tasks">${tasks.map((t) => `
+        <div class="pj-task ${closed(t) ? 'done' : ''}">
+          ${closed(t) ? '<span class="pj-ok">✓</span>' : `<button class="qdone qd-inline" data-qdone="${t.id}" title="concluir">✓</button>`}
+          <a href="#" data-open-task="${t.id}">${esc(t.title)}</a>
+          ${nodeName(t)}
+          <span class="status-chip" style="background:${statusColor(t.status)}">${t.status}</span>
+          ${prazoChip(t)}
+        </div>`).join('')}</div>` : '<div class="em-note">nenhuma tarefa vinculada — abra uma tarefa e escolha este projeto no campo "Projeto (estrutura)", ou peça ao gerente</div>'}
+      <button class="btn small" id="pjp-newtask" style="margin-top:8px">+ tarefa neste projeto</button>
+    </div>
+
+    <div class="pj-sec"><h3>Linha do tempo (Gantt do projeto)</h3>${ganttHTML(tasks)}</div>
+  </div>`;
+
+  main.querySelectorAll('[data-pjnav]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); PROJ_OPEN = a.dataset.pjnav || null; render(); }));
+  main.querySelectorAll('[data-pj]').forEach((el) => el.addEventListener('click', () => { PROJ_OPEN = el.dataset.pj; render(); }));
+  main.querySelectorAll('[data-open-task]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); openModal(a.dataset.openTask); }));
+  bindGanttClicks(main);
+  bindQuickDone(main);
+  $('#pjp-save').onclick = async () => {
+    await post('/api/project/update', { id: p.id, status: $('#pjp-status').value, prazo_date: $('#pjp-prazo').value || '' });
+    load();
+  };
+  $('#pjp-rename').onclick = async () => {
+    const name = prompt('Novo nome do projeto:', p.name);
+    if (name && name.trim()) { await post('/api/project/update', { id: p.id, name: name.trim() }); load(); }
+  };
+  $('#pjp-del').onclick = async () => {
+    if (!confirm(`Excluir o projeto "${p.name}"? Subprojetos vão junto; as tarefas ficam (só desvinculam).`)) return;
+    await post('/api/project/delete', { id: p.id });
+    PROJ_OPEN = p.parent_id || null;
+    load();
+  };
+  $('#pjp-newsub').onclick = () => { const f = $('#pj-form', main); f.style.display = 'flex'; $('#pjf-name', main).focus(); };
+  const btnSave = $('#pjf-save', main);
+  if (btnSave) btnSave.onclick = async () => {
+    const name = $('#pjf-name', main).value.trim();
+    if (!name) { alert('nome obrigatório'); return; }
+    await post('/api/project/create', {
+      name, empresa: $('#pjf-empresa', main).value.trim(),
+      prazo_date: $('#pjf-prazo', main).value || null, parent_id: p.id,
+    });
+    load();
+  };
+  $('#pjp-newtask').onclick = () => openModal(null);
 }
 
 /* ================= modal ================= */
@@ -744,6 +995,18 @@ function openModal(slug) {
 function closeModal() {
   MODAL_SLUG = null;
   $('#overlay').classList.remove('open');
+}
+
+function projSelOptions(cur) {
+  const opts = ['<option value="">(nenhum)</option>'];
+  const walk = (parent, depth) => {
+    for (const p of projChildren(parent).sort((a, b) => a.name.localeCompare(b.name, 'pt'))) {
+      opts.push(`<option value="${p.id}" ${cur === p.id ? 'selected' : ''}>${'  '.repeat(depth)}${depth ? '└ ' : ''}${esc(p.name)}</option>`);
+      walk(p.id, depth + 1);
+    }
+  };
+  walk(null, 0);
+  return opts.join('');
 }
 
 function renderModal(slug) {
@@ -768,6 +1031,10 @@ function renderModal(slug) {
         <datalist id="dl-empresa">${distinct('empresa').map((e) => `<option value="${esc(e)}">`).join('')}</datalist>
         <datalist id="dl-projeto">${distinct('projeto').map((p) => `<option value="${esc(p)}">`).join('')}</datalist>
       </div>
+      ${PROJECTS.length ? `<div class="m-row">
+        <div class="field" style="flex:1 1 100%"><label>🗂 Projeto (estrutura — aparece na visão Projetos)</label>
+        <select id="m-project">${projSelOptions(t ? t.project_id : (VIEW === 'projetos' && PROJ_OPEN ? PROJ_OPEN : null))}</select></div>
+      </div>` : ''}
       <div class="m-row">
         <div class="field"><label>Prazo (data exata)</label><div class="datewrap"><input type="date" id="m-prazo-date" value="${t?.prazo.date ?? ''}"><button type="button" class="cal-btn" data-pick="m-prazo-date" title="abrir calendário">📅</button></div></div>
         <div class="field"><label>ou mês</label><div class="datewrap"><input type="month" id="m-prazo-month" value="${t?.prazo.month ?? ''}"><button type="button" class="cal-btn" data-pick="m-prazo-month" title="abrir calendário">📅</button></div></div>
@@ -850,10 +1117,13 @@ function renderModal(slug) {
       notas: $('#m-notas').value,
     };
     if (!body.title) { alert('título obrigatório'); return; }
+    const pjSel = $('#m-project');
     if (isNew) {
       const r = await post('/api/task/create', body);
       MODAL_SLUG = r.slug;
+      if (pjSel && pjSel.value) await post('/api/task/update', { slug: r.slug, project_id: pjSel.value });
     } else {
+      if (pjSel) body.project_id = pjSel.value || '';
       await post('/api/task/update', { slug: t.id, ...body });
     }
     await load();
