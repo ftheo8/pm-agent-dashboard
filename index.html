@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pm-agent · painel</title>
+<title>IAGO · IA de Gerenciamento Operacional</title>
 <style>
   :root {
     --surface-1: #fcfcfb;
@@ -361,11 +361,52 @@
   .h-when { flex: none; font-size: 11.5px; color: var(--muted); min-width: 58px; }
   .h-when.late { color: var(--red); font-weight: 600; }
   .h-gcal { border: 1px dashed var(--baseline); border-radius: 10px; padding: 8px 10px; color: var(--muted); font-size: 12px; }
+
+  /* ===== IAGO: marca, login, settings, participantes, log, modo privado ===== */
+  #brand, .brandbox { display: flex; align-items: center; gap: 9px; }
+  #brand .lg, .brandbox .lg { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, #33415c, #4a3aa7); color: #fff; display: flex; align-items: center; justify-content: center; flex: none; }
+  .brandbox.big .lg { width: 44px; height: 44px; border-radius: 12px; }
+  #brand .bt, .brandbox .bt { display: flex; flex-direction: column; line-height: 1.1; }
+  #brand .bt b, .brandbox .bt b { font-size: 17px; letter-spacing: 1.5px; }
+  .brandbox.big .bt b { font-size: 24px; letter-spacing: 2px; }
+  #brand .bt small, .brandbox .bt small { font-size: 9.5px; color: var(--muted); letter-spacing: .3px; }
+  #pvt-badge { display: none; background: #b3123f; color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 3px 8px; border-radius: 999px; margin-left: 6px; }
+  body.pvt #pvt-badge { display: inline-block; }
+  body.pvt header { background: color-mix(in srgb, #b3123f 12%, var(--surface-1)); border-bottom: 2px solid #b3123f; }
+  body.pvt { --accent: #b3123f; }
+  body.pvt #btn-pvt { background: #b3123f; color: #fff; border-color: #b3123f; }
+
+  #login { position: fixed; inset: 0; z-index: 200; background: var(--page); display: none; align-items: center; justify-content: center; }
+  #login.on { display: flex; }
+  #login-card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 16px; padding: 28px 26px; width: min(92vw, 360px); display: flex; flex-direction: column; gap: 6px; box-shadow: 0 12px 40px rgba(0,0,0,.18); }
+  #login-card .brandbox { margin-bottom: 14px; }
+  #login-card label { font-size: 11.5px; color: var(--muted); margin-top: 8px; }
+  #login-card input { padding: 9px 10px; border: 1px solid var(--baseline); border-radius: 9px; background: var(--page); color: var(--ink); font: inherit; }
+  #login-card button { margin-top: 14px; padding: 10px; }
+  #lg-err { color: var(--red); font-size: 12px; min-height: 16px; }
+  .lg-note { font-size: 11px; color: var(--muted); }
+
+  .avs { display: inline-flex; margin-left: 2px; }
+  .avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--violet); color: #fff; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-left: -4px; border: 1.5px solid var(--surface-1); }
+  .as-chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--baseline); border-radius: 999px; padding: 4px 10px; margin: 2px 4px 2px 0; font-size: 12.5px; cursor: pointer; }
+  .as-chip input { accent-color: var(--accent); }
+
+  .set-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+  .set-user { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border: 1px solid var(--grid); border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+  .set-user.off { opacity: .55; }
+  .set-user b { min-width: 90px; }
+  .set-user .dim { font-size: 11.5px; }
+  .set-user code { background: var(--page); border: 1px solid var(--baseline); border-radius: 6px; padding: 1px 6px; font-size: 12px; }
+  #user-chip { font-size: 11.5px; color: var(--muted); }
 </style>
 </head>
 <body>
 <header>
-  <h1>pm-agent <span>· painel de projetos</span></h1>
+  <div id="brand" title="IAGO — IA de Gerenciamento Operacional">
+    <span class="lg" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><path d="M17.25 13.5v7.5M13.5 17.25h7.5"/></svg></span>
+    <span class="bt"><b>IAGO</b><small>IA de Gerenciamento Operacional</small></span>
+    <span id="pvt-badge">MODO PRIVADO</span>
+  </div>
   <nav id="nav">
     <button data-tab="hoje" class="active">🏠 Hoje</button>
     <button data-tab="projetos">📋 Projetos</button>
@@ -379,10 +420,29 @@
     <button data-view="projetos">🗂 Projetos</button>
   </nav>
   <button class="btn primary" id="btn-new">+ Novo</button>
-  <button class="btn" id="btn-chat">💬 Chat</button>
+  <button class="btn" id="btn-chat">💬 IAGO</button>
+  <button class="btn" id="btn-pvt" style="display:none" title="modo privado">🔒</button>
+  <button class="btn" id="btn-cfg" title="configurações">⚙️</button>
   <label class="toggle"><input type="checkbox" id="show-arch"> arquivados</label>
   <div id="meta"></div>
+  <span id="user-chip" title="clique na engrenagem para sair ou trocar senha"></span>
 </header>
+
+<div id="login">
+  <form id="login-card">
+    <div class="brandbox big">
+      <span class="lg"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><path d="M17.25 13.5v7.5M13.5 17.25h7.5"/></svg></span>
+      <span class="bt"><b>IAGO</b><small>IA de Gerenciamento Operacional</small></span>
+    </div>
+    <label>Usuário</label>
+    <input type="text" id="lg-user" autocomplete="username" autocapitalize="none" required autofocus>
+    <label>Senha</label>
+    <input type="password" id="lg-pass" autocomplete="current-password" required>
+    <button class="btn primary" type="submit" id="lg-go">Entrar</button>
+    <div id="lg-err"></div>
+    <div class="lg-note">Você continua conectado neste navegador.</div>
+  </form>
+</div>
 <div id="filters">
   <input type="search" id="f-q" placeholder="buscar título, notas, passos...">
   <select id="f-empresa"></select>
@@ -401,7 +461,7 @@
 
 <div id="chat">
   <div id="c-head">
-    <b>💬 Gerente de Projetos</b>
+    <b>💬 IAGO</b>
     <span class="muted-note">mesma conversa do Telegram</span>
     <button class="m-close" id="c-close">×</button>
   </div>
@@ -445,9 +505,35 @@ if (new URLSearchParams(location.search).get('key')) {
   localStorage.setItem('pm_key', KEY);
   history.replaceState(null, '', location.pathname); // tira a chave da URL
 }
-if (!KEY) { // primeiro acesso sem ?key= — pede e guarda no navegador
-  KEY = prompt('Chave de acesso do painel:') || '';
-  if (KEY) localStorage.setItem('pm_key', KEY);
+// Sessão IAGO (login por usuário/senha). A chave antiga (pm_key) segue valendo como admin.
+let TOKEN = localStorage.getItem('iago_token') || '';
+let ME = null;
+try { ME = JSON.parse(localStorage.getItem('iago_user') || 'null'); } catch { ME = null; }
+let USERS = [];      // usuários ativos (pra atribuir tarefas e mostrar avatares)
+let PVT = false;     // modo privado (só tarefas private=true do próprio usuário)
+const isAdm = () => (ME?.role ?? (KEY ? 'admin' : '')) === 'admin';
+
+function authHeaders() {
+  const h = {};
+  if (TOKEN) h['x-iago-token'] = TOKEN;
+  else if (KEY) h['x-pm-key'] = KEY;
+  if (PVT) h['x-pm-pvt'] = '1';
+  return h;
+}
+function showLogin() { $('#login').classList.add('on'); setTimeout(() => $('#lg-user')?.focus(), 50); }
+function logout() {
+  if (TOKEN) fetch(`${API}/api/auth/logout`, { method: 'POST', headers: { 'x-iago-token': TOKEN } }).catch(() => {});
+  localStorage.removeItem('iago_token'); localStorage.removeItem('iago_user'); localStorage.removeItem('pm_key');
+  sessionStorage.removeItem('iago_pvt_ok');
+  location.reload();
+}
+function applyRole() {
+  const adm = isAdm();
+  const el = (s) => document.querySelector(s);
+  el('#nav [data-tab="email"]').style.display = adm ? '' : 'none';
+  el('#subnav [data-view="projetos"]').style.display = adm ? '' : 'none';
+  el('#btn-pvt').style.display = adm ? '' : 'none';
+  el('#user-chip') && (el('#user-chip').textContent = ME ? ME.name || ME.username : '');
 }
 let TASKS = [];
 let PROJECTS = [];    // entidade Projeto (hierarquia própria; tarefas vinculam por project_id)
@@ -528,12 +614,12 @@ function renderFilters() {
 }
 
 async function api(path, opts = {}) {
-  const res = await fetch(`${API}${path}`, { ...opts, headers: { ...(opts.headers || {}), 'x-pm-key': KEY } });
+  const res = await fetch(`${API}${path}`, { ...opts, headers: { ...(opts.headers || {}), ...authHeaders() } });
   if (res.status === 401) {
-    localStorage.removeItem('pm_key');
-    KEY = prompt('Chave de acesso do painel:') || '';
-    if (KEY) { localStorage.setItem('pm_key', KEY); return api(path, opts); }
-    throw new Error('sem chave');
+    localStorage.removeItem('pm_key'); localStorage.removeItem('iago_token'); localStorage.removeItem('iago_user');
+    KEY = ''; TOKEN = ''; ME = null;
+    showLogin();
+    throw new Error('sessao expirada');
   }
   const body = await res.json();
   if (!res.ok) { alert(body.error || 'erro na API'); throw new Error(body.error || 'api'); }
@@ -542,12 +628,14 @@ async function api(path, opts = {}) {
 const post = (path, obj) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
 
 async function load() {
-  const [tasks, projects] = await Promise.all([
+  const [tasks, projects, users] = await Promise.all([
     api('/api/tasks'),
     api('/api/projects').catch(() => PROJECTS),
+    api('/api/users').catch(() => USERS),
   ]);
   TASKS = tasks;
   PROJECTS = projects || [];
+  USERS = (users || []).filter((u) => u.active !== false);
   TASKS.sort((a, b) => a.title.localeCompare(b.title, 'pt'));
   $('#meta').textContent = `${visible().length} projetos · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   renderFilters();
@@ -645,15 +733,22 @@ function renderKanban(main) {
 }
 const projById = (id) => PROJECTS.find((p) => p.id === id);
 
+const userById = (id) => USERS.find((u) => u.id === id);
+const avatarHTML = (uid) => {
+  const u = userById(uid);
+  return u ? `<span class="avatar" title="${esc(u.name || u.username)}">${esc((u.name || u.username).slice(0, 1).toUpperCase())}</span>` : '';
+};
+
 function cardHTML(t) {
   const p = progress(t);
   const done = ['concluído', 'mesclado'].includes(t.status);
   const pj = t.project_id ? projById(t.project_id) : null;
+  const avs = (t.assignees || []).map(avatarHTML).join('');
   return `<div class="card" data-open="${t.id}">
     ${done ? '' : `<button class="qdone" data-qdone="${t.id}" title="marcar como concluído">✓</button>`}
     <h3>${esc(t.title)}</h3>
     ${t.empresa || t.projeto || pj ? `<div class="sub" style="margin-bottom:6px">${t.empresa ? `<span class="tagchip">${esc(t.empresa)}</span>` : ''}${t.projeto ? `<span class="tagchip proj">${esc(t.projeto)}</span>` : ''}${pj ? `<span class="tagchip pnode" data-gopj="${pj.id}">🗂 ${esc(pj.name)}</span>` : ''}</div>` : ''}
-    <div class="sub">${prazoChip(t)}${p.total ? `<span>${p.done}/${p.total}</span>` : ''}${t.attachments.length ? `<span class="clip">📎${t.attachments.length}</span>` : ''}${t.archived ? '<span class="arch-badge">ARQ</span>' : ''}</div>
+    <div class="sub">${prazoChip(t)}${p.total ? `<span>${p.done}/${p.total}</span>` : ''}${t.attachments.length ? `<span class="clip">📎${t.attachments.length}</span>` : ''}${avs ? `<span class="avs">${avs}</span>` : ''}${t.archived ? '<span class="arch-badge">ARQ</span>' : ''}</div>
     ${p.total ? `<div class="progress"><i style="width:${p.pct}%;background:${statusColor(t.status)}"></i></div>` : ''}
   </div>`;
 }
@@ -1041,6 +1136,10 @@ function renderModal(slug) {
         <div class="field"><label>ou texto livre</label><input type="text" id="m-prazo-raw" value="${esc(t?.prazo.raw ?? '')}" placeholder="ex: depois do edital"></div>
       </div>
       <div class="m-row"><div class="field" style="flex:1 1 100%"><label>Notas</label><textarea id="m-notas">${esc(t?.notas ?? '')}</textarea></div></div>
+      ${!isNew && !PVT && USERS.length > 1 ? `<div class="m-row"><div class="field" style="flex:1 1 100%">
+        <label>👥 Participantes (quem mais vê e mexe nesta tarefa)</label>
+        <div id="m-assign">${USERS.filter((u) => u.id !== t.owner_id).map((u) => `<label class="as-chip"><input type="checkbox" value="${u.id}" ${(t.assignees || []).includes(u.id) ? 'checked' : ''}> ${esc(u.name || u.username)}</label>`).join('')}</div>
+      </div></div>` : ''}
       <button class="btn primary" id="m-save">${isNew ? 'Criar projeto' : 'Salvar alterações'}</button>
     </div>
 
@@ -1076,7 +1175,7 @@ function renderModal(slug) {
       </div>
     </div>
 
-    <div class="m-sec">
+    <div class="m-sec" ${isAdm() ? '' : 'style="display:none"'}>
       <h4>Alertas (chegam no Telegram)</h4>
       <ul class="m-list">${t.alerts.map((a) => `
         <li>
@@ -1095,8 +1194,14 @@ function renderModal(slug) {
       </div>
     </div>
 
+    <div class="m-sec">
+      <h4>📜 Atividade</h4>
+      <ul class="m-list" id="m-log"><li class="dim" style="border:0">carregando…</li></ul>
+    </div>
+
     <div class="m-footer">
       <button class="btn" id="m-arch">${t.archived ? 'Restaurar' : 'Arquivar'}</button>
+      ${isAdm() ? `<button class="btn" id="m-pvt">${t.private ? '🔓 Tirar do privado' : '🔒 Mover pro privado'}</button>` : ''}
       <span class="spacer"></span>
       <button class="btn danger" id="m-del">Apagar de vez</button>
     </div>`}
@@ -1186,6 +1291,27 @@ function renderModal(slug) {
     else if (days !== '') body.days_before = Number(days);
     else { alert('escolha data/hora ou dias antes do prazo'); return; }
     await post('/api/alert/add', body); load();
+  };
+
+  // participantes: salva na hora ao marcar/desmarcar
+  document.querySelectorAll('#m-assign input').forEach((cb) => cb.onchange = async () => {
+    const ids = [...document.querySelectorAll('#m-assign input:checked')].map((x) => Number(x.value));
+    await post('/api/task/assign', { slug: t.id, user_ids: ids });
+    load();
+  });
+
+  // log de atividade (estilo Trello: quem fez o quê)
+  api(`/api/task/events?slug=${encodeURIComponent(t.id)}`).then((evs) => {
+    const el = $('#m-log');
+    if (!el) return;
+    el.innerHTML = evs.map((ev) => `<li><span class="grow"><b>${esc(ev.username)}</b> ${esc(ev.detail || ev.action)}</span><span class="dim">${fmtDateTime(ev.created_at)}</span></li>`).join('')
+      || '<li class="dim" style="border:0">sem registros ainda</li>';
+  }).catch(() => {});
+
+  const pvtBtn = $('#m-pvt');
+  if (pvtBtn) pvtBtn.onclick = async () => {
+    await post('/api/task/update', { slug: t.id, private: !t.private });
+    closeModal(); load();
   };
 
   $('#m-arch').onclick = async () => {
@@ -1581,7 +1707,7 @@ async function sendChat() {
   $('#c-typing').classList.add('on');
   try {
     const res = await fetch(`${AGENT}?chat=1`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-pm-key': KEY }, body: JSON.stringify({ text }),
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ text }),
     });
     const body = await res.json();
     if (!res.ok) throw new Error(body.error || 'erro');
@@ -1639,9 +1765,148 @@ document.addEventListener('keydown', (e) => {
   else closeModal();
 });
 
-load();
+/* ================= login / settings / modo privado ================= */
+$('#login-card').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#lg-err').textContent = '';
+  $('#lg-go').disabled = true;
+  try {
+    const res = await fetch(`${API}/api/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: $('#lg-user').value.trim(), password: $('#lg-pass').value }),
+    });
+    const body = await res.json();
+    if (!res.ok) { $('#lg-err').textContent = body.error || 'erro no login'; return; }
+    TOKEN = body.token; ME = body.user;
+    localStorage.setItem('iago_token', TOKEN);
+    localStorage.setItem('iago_user', JSON.stringify(ME));
+    $('#login').classList.remove('on');
+    applyRole();
+    load();
+  } catch { $('#lg-err').textContent = 'erro de conexão'; }
+  finally { $('#lg-go').disabled = false; }
+});
+
+$('#btn-pvt').onclick = async () => {
+  if (!PVT) {
+    if (!sessionStorage.getItem('iago_pvt_ok')) {
+      const pw = prompt('Senha para entrar no modo privado:');
+      if (!pw) return;
+      const res = await fetch(`${API}/api/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: ME?.username || 'felipe', password: pw, verify_only: true }),
+      }).catch(() => null);
+      if (!res || !res.ok) { alert('senha incorreta'); return; }
+      sessionStorage.setItem('iago_pvt_ok', '1'); // vale só nesta aba, até fechar
+    }
+    PVT = true;
+    TAB = 'projetos'; VIEW = 'kanban'; PROJ_OPEN = null;
+  } else {
+    PVT = false;
+  }
+  document.body.classList.toggle('pvt', PVT);
+  $('#btn-pvt').textContent = PVT ? '🔓 sair' : '🔒';
+  closeModal();
+  await load();
+};
+
+function renderSettings() {
+  MODAL_SLUG = null;
+  const adm = isAdm();
+  const admHTML = !adm ? '' : `
+    <div class="m-sec">
+      <h4>👥 Usuários do IAGO</h4>
+      <div class="set-list" id="set-users"><span class="dim">carregando…</span></div>
+      <div class="m-row" style="margin-top:10px">
+        <input type="text" id="nu-name" placeholder="nome (ex: Karol)" style="flex:1">
+        <input type="text" id="nu-user" placeholder="username (ex: karol)" style="flex:1">
+        <input type="text" id="nu-pass" placeholder="senha inicial" style="flex:1">
+        <button class="btn small primary" id="nu-add">criar usuário</button>
+      </div>
+      <div class="muted-note" style="margin-top:6px">Telegram: a pessoa abre o bot <b>@botianews_bot</b> e manda o <b>código</b> dela (1x só). O IAGO passa a conversar com ela vendo apenas as tarefas dela.</div>
+    </div>`;
+  $('#modal').innerHTML = `
+    <button class="m-close" id="m-close">×</button>
+    <h2>⚙️ Configurações</h2>
+    <div class="muted-note">conectado como <b>${esc(ME?.name || ME?.username || 'admin')}</b>${adm ? ' · admin' : ''}</div>
+    ${admHTML}
+    <div class="m-sec">
+      <h4>🔑 Minha senha</h4>
+      <div class="m-row">
+        <input type="password" id="pw-cur" placeholder="senha atual" style="flex:1">
+        <input type="password" id="pw-new" placeholder="senha nova (mín. 6)" style="flex:1">
+        <button class="btn small" id="pw-save">trocar</button>
+      </div>
+    </div>
+    <div class="m-footer">
+      <span class="spacer"></span>
+      <button class="btn danger" id="btn-logout">Sair deste navegador</button>
+    </div>`;
+  $('#overlay').classList.add('open');
+  $('#m-close').onclick = closeModal;
+  $('#btn-logout').onclick = () => { if (confirm('Sair do IAGO neste navegador?')) logout(); };
+  $('#pw-save').onclick = async () => {
+    const current = $('#pw-cur').value, password = $('#pw-new').value;
+    if (!current || password.length < 6) { alert('preencha a senha atual e uma nova com pelo menos 6 caracteres'); return; }
+    await post('/api/auth/password', { current, password });
+    alert('senha trocada ✓');
+    $('#pw-cur').value = ''; $('#pw-new').value = '';
+  };
+  if (!adm) return;
+
+  const paint = (users) => {
+    $('#set-users').innerHTML = users.map((u) => `
+      <div class="set-user ${u.active ? '' : 'off'}">
+        <b>${esc(u.name || u.username)}</b>
+        <span class="dim">@${esc(u.username)} · ${u.role}</span>
+        <span class="dim">${u.telegram_linked ? '📱 Telegram ✓' : (u.link_code ? `código do bot: <code>${esc(u.link_code)}</code>` : 'sem código')}</span>
+        <span class="spacer" style="flex:1"></span>
+        <button class="btn small" data-supass="${u.id}">nova senha</button>
+        <button class="btn small" data-sucode="${u.id}">novo código</button>
+        ${u.id === ME?.id ? '' : `<button class="btn small" data-sutoggle="${u.id}" data-on="${u.active}">${u.active ? 'desativar' : 'reativar'}</button>`}
+      </div>`).join('') || '<span class="dim">nenhum usuário</span>';
+    document.querySelectorAll('[data-supass]').forEach((b) => b.onclick = async () => {
+      const p = prompt('Nova senha para este usuário (mín. 6):');
+      if (!p || p.length < 6) return;
+      await post('/api/user/update', { id: Number(b.dataset.supass), password: p });
+      alert('senha definida ✓ (avise a pessoa)');
+    });
+    document.querySelectorAll('[data-sucode]').forEach((b) => b.onclick = async () => {
+      await post('/api/user/update', { id: Number(b.dataset.sucode), new_link_code: true, unlink_telegram: true });
+      refresh();
+    });
+    document.querySelectorAll('[data-sutoggle]').forEach((b) => b.onclick = async () => {
+      await post('/api/user/update', { id: Number(b.dataset.sutoggle), active: b.dataset.on !== 'true' });
+      refresh();
+    });
+  };
+  const refresh = () => api('/api/users').then(paint).catch(() => {});
+  refresh();
+  $('#nu-add').onclick = async () => {
+    const name = $('#nu-name').value.trim(), username = $('#nu-user').value.trim(), password = $('#nu-pass').value;
+    if (!username || password.length < 6) { alert('preencha username e senha (mín. 6)'); return; }
+    await post('/api/user/create', { name, username, password });
+    $('#nu-name').value = $('#nu-user').value = $('#nu-pass').value = '';
+    refresh();
+  };
+}
+$('#btn-cfg').onclick = renderSettings;
+
+/* ================= boot ================= */
+async function boot() {
+  if (!TOKEN && !KEY) { showLogin(); return; }
+  try {
+    const me = await api('/api/auth/me');
+    ME = me.user;
+    localStorage.setItem('iago_user', JSON.stringify(ME));
+  } catch { return; } // 401 já abriu o login
+  applyRole();
+  load();
+}
+boot();
 setInterval(() => {
-  if (!MODAL_SLUG && !CHAT_BUSY) load();
+  if (!ME && !KEY) return; // sem sessão, sem refresh
+  if (!MODAL_SLUG && !CHAT_BUSY && !$('#overlay').classList.contains('open')) load();
   if (CHAT_OPEN && !CHAT_BUSY) loadChat({ keepScroll: true }); // pega mensagens vindas do Telegram/briefings
 }, 20000);
 </script>
