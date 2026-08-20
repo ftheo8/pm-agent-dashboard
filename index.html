@@ -278,6 +278,9 @@
   #em-view-bar a { color: var(--accent); font-size: 12.5px; text-decoration: none; flex: none; }
   #em-view-body { padding: 14px 16px; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; }
   #em-view-body a { color: var(--accent); }
+  .em-item.read { opacity: .55; }
+  .em-unread-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 7px; vertical-align: 2px; }
+  .em-badge { font-size: 10px; color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; vertical-align: 1px; }
   .em-acts { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .em-acts .btn { font-size: 11.5px; padding: 2px 8px; }
   .em-item.pend { opacity: .65; }
@@ -408,6 +411,37 @@
   .ag-tit { flex: 1; }
   .ag-calchip { background: var(--chip, var(--page)); border: 1px solid var(--baseline); border-radius: 999px; padding: 1px 8px; font-size: 10.5px; color: var(--muted); }
 
+  /* ===== Hoje v2 ===== */
+  .h2-kpis-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: none; }
+  .h2-kpis-row::-webkit-scrollbar { display: none; }
+  .h2-kpi { background: var(--surface-1); border: 1px solid var(--border); border-radius: 13px; padding: 12px 16px; min-width: 150px; flex: none; display: flex; flex-direction: column; gap: 2px; }
+  .h2-kpi.sby { cursor: pointer; }
+  .h2-kpi.sby:hover { border-color: var(--baseline); }
+  .h2-kpik { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .h2-kpiv { font-size: 19px; font-weight: 700; }
+  .h2-kpiv.late { color: var(--red); }
+  .h2-kpis { font-size: 11px; color: var(--muted); }
+  .h2-temp { font-size: 42px; font-weight: 800; line-height: 1; }
+  .h2-tempsub { font-size: 13px; margin-top: 6px; }
+  .h2-here { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+  .h2-more { font-size: 11.5px; color: var(--accent); display: inline-block; margin-top: 8px; }
+  .h2-click { cursor: pointer; }
+  .h2-click:hover { border-color: var(--baseline); }
+  .h2-ev { cursor: pointer; border-radius: 8px; padding: 4px 6px; }
+  .h2-ev:hover { background: var(--grid); }
+  .h2-news { gap: 2px; }
+  .h2-newsitem { display: flex; gap: 8px; align-items: baseline; padding: 6px 6px; border-radius: 8px; color: var(--ink-2); text-decoration: none; font-size: 13px; line-height: 1.35; }
+  .h2-newsitem:hover { background: var(--grid); color: var(--ink); }
+  .h2-newsitem .src { flex: none; font-size: 10.5px; color: var(--muted); min-width: 74px; }
+  #hpop { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 120; padding: 16px; }
+  #hpop.on { display: flex; }
+  #hpop-box { background: var(--surface-1); border: 1px solid var(--baseline); border-radius: 16px; padding: 20px; width: min(94vw, 460px); max-height: 84dvh; overflow-y: auto; }
+  .wp-horas { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 6px; }
+  .wp-hora { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 44px; font-size: 11px; background: var(--grid); border-radius: 9px; padding: 7px 4px; }
+  .wp-day { display: flex; align-items: center; gap: 10px; padding: 6px 2px; border-top: 1px solid var(--grid); font-size: 13px; }
+  .wp-nome { min-width: 46px; text-transform: capitalize; font-weight: 600; }
+  .wp-tmax { font-weight: 700; }
+
   /* ===== agenda estilo Google Calendar ===== */
   .gc-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
   .gc-rotulo { font-size: 15px; text-transform: capitalize; margin-left: 6px; }
@@ -443,7 +477,8 @@
   /* ===== polimento Mongaru OS ===== */
   .btn { border-radius: 10px; transition: border-color .15s, background .15s, transform .08s; }
   .btn:active { transform: scale(.97); }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #06130C; font-weight: 600; }
+  .btn.primary { background: #E8ECEA; border-color: #E8ECEA; color: #0C0F0D; font-weight: 600; }
+  nav button.active, .gc-mode button.active { background: #E8ECEA !important; color: #0C0F0D !important; font-weight: 600; }
   .card, .bigcard { border-radius: 14px; transition: border-color .15s, transform .1s; }
   .card:hover { border-color: var(--baseline); }
   input, select, textarea { border-radius: 10px !important; }
@@ -485,29 +520,29 @@
 </head>
 <body>
 <header>
-  <div id="brand" title="IAGO — IA de Gerenciamento Operacional">
+  <a class="btn" id="home-left" href="https://mongaru.vercel.app/" title="voltar ao portal Mongaru" style="text-decoration:none">🏠</a>
+  <a id="brand" href="https://mongaru.vercel.app/" title="voltar ao portal Mongaru" style="text-decoration:none;color:inherit">
     <span class="lg" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><path d="M17.25 13.5v7.5M13.5 17.25h7.5"/></svg></span>
     <span class="bt"><b>IAGO</b><small>IA de Gerenciamento Operacional</small></span>
     <span id="pvt-badge">MODO PRIVADO</span>
-  </div>
+  </a>
   <nav id="nav">
-    <button data-tab="hoje" class="active">🏠 Hoje</button>
-    <button data-tab="projetos">📋 Projetos</button>
-    <button data-tab="agendag">📅 Agenda</button>
-    <button data-tab="email">📬 E-mail</button>
+    <button data-tab="hoje" class="active">Hoje</button>
+    <button data-tab="projetos">Tasks</button>
+    <button data-tab="projx">Projetos</button>
+    <button data-tab="agendag">Agenda</button>
+    <button data-tab="email">E-mail</button>
   </nav>
   <nav id="subnav">
     <button data-view="kanban" class="active">Kanban</button>
     <button data-view="cards">Cards</button>
     <button data-view="agenda">Agenda</button>
     <button data-view="gantt">Gantt</button>
-    <button data-view="projetos">🗂 Projetos</button>
   </nav>
   <button class="btn primary" id="btn-new">+ Novo</button>
   <button class="btn" id="btn-chat">💬 IAGO</button>
   <button class="btn" id="btn-pvt" style="display:none" title="modo privado">🔒</button>
   <button class="btn" id="btn-cfg" title="configurações">⚙️</button>
-  <a class="btn" href="https://mongaru.vercel.app/" style="text-decoration:none" title="voltar ao portal Mongaru">🏠 portal</a>
   <label class="toggle"><input type="checkbox" id="show-arch"> arquivados</label>
   <div id="meta"></div>
   <span id="user-chip" title="clique na engrenagem para sair ou trocar senha"></span>
@@ -616,8 +651,7 @@ function applyRole() {
   const adm = isAdm();
   const el = (s) => document.querySelector(s);
   el('#nav [data-tab="email"]').style.display = adm ? '' : 'none';
-  el('#subnav [data-view="projetos"]').style.display = adm ? '' : 'none';
-  el('#btn-pvt').style.display = ''; // modo privado é de todos (cada um vê só as suas)
+  el('#nav [data-tab="projx"]').style.display = adm ? '' : 'none';
   el('#user-chip') && (el('#user-chip').textContent = ME ? ME.name || ME.username : '');
 }
 let TASKS = [];
@@ -743,12 +777,13 @@ function render() {
   document.querySelectorAll('#subnav button').forEach((b) => b.classList.toggle('active', b.dataset.view === VIEW));
   $('#subnav').style.display = proj ? '' : 'none';
   $('#filters').style.display = proj ? '' : 'none';
-  $('#btn-new').style.display = proj ? '' : 'none';
+  $('#btn-new').style.display = (proj || TAB === 'projx') ? '' : 'none';
   $('#show-arch').closest('label').style.display = proj ? '' : 'none';
+  $('#btn-pvt').style.display = (isAdm() && (TAB === 'projetos' || TAB === 'projx')) ? '' : 'none';
   if (TAB === 'hoje') { renderHome(main); return; }
   if (TAB === 'agendag') { renderAgendaG(main); return; }
   if (TAB === 'email') { renderEmail(main); return; }
-  if (VIEW === 'projetos') { renderProjetos(main); return; }
+  if (TAB === 'projx') { renderProjetos(main); return; }
   if (!visible().length) { main.innerHTML = '<div class="empty">Nenhum projeto por aqui.</div>'; return; }
   if (VIEW === 'kanban') renderKanban(main);
   else if (VIEW === 'cards') renderCards(main);
@@ -867,7 +902,7 @@ function bindQuickDone(main) {
   }));
   main.querySelectorAll('[data-gopj]').forEach((el) => el.addEventListener('click', (e) => {
     e.stopPropagation();
-    PROJ_OPEN = el.dataset.gopj; VIEW = 'projetos'; render();
+    PROJ_OPEN = el.dataset.gopj; TAB = 'projx'; render();
   }));
 }
 
@@ -1226,7 +1261,7 @@ function renderModal(slug) {
       </div>
       <div class="m-row">
         <div class="field" style="flex:1 1 100%"><label>🗂 Projeto / subprojeto (estrutura — aba Projetos)</label>
-        <select id="m-project">${projSelOptions(t ? t.project_id : (VIEW === 'projetos' && PROJ_OPEN ? PROJ_OPEN : null))}<option value="__new__">＋ criar projeto novo…</option></select></div>
+        <select id="m-project">${projSelOptions(t ? t.project_id : (TAB === 'projx' && PROJ_OPEN ? PROJ_OPEN : null))}<option value="__new__">＋ criar projeto novo…</option></select></div>
       </div>
       <div class="m-row">
         <div class="field"><label>Prazo (data exata)</label><div class="datewrap"><input type="date" id="m-prazo-date" value="${t?.prazo.date ?? ''}"><button type="button" class="cal-btn" data-pick="m-prazo-date" title="abrir calendário">📅</button></div></div>
@@ -1485,7 +1520,7 @@ const HOME = { weather: null, dollar: null, news: null, ts: 0, loading: false };
 const HOME_TTL = 15 * 60 * 1000; // clima/dólar/notícias renovam a cada 15 min
 const WMO = { 0: '☀️ céu limpo', 1: '🌤 quase limpo', 2: '⛅ parc. nublado', 3: '☁️ nublado', 45: '🌫 névoa', 48: '🌫 névoa', 51: '🌦 garoa', 53: '🌦 garoa', 55: '🌦 garoa', 61: '🌧 chuva fraca', 63: '🌧 chuva', 65: '🌧 chuva forte', 66: '🌧 chuva gelada', 67: '🌧 chuva gelada', 80: '🌦 pancadas', 81: '🌧 pancadas', 82: '⛈ pancadas fortes', 95: '⛈ tempestade', 96: '⛈ tempestade', 99: '⛈ tempestade' };
 
-const meteoURL = (lat, lon) => `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=America%2FSao_Paulo&forecast_days=1`;
+const meteoURL = (lat, lon) => `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m&hourly=temperature_2m,precipitation_probability,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=America%2FSao_Paulo&forecast_days=7`;
 
 // posição atual do navegador (se o Felipe permitir); null se negado/indisponível
 function getPosition() {
@@ -1514,12 +1549,14 @@ async function loadHere() {
 async function loadHome(force = false) {
   if (HOME.loading || (!force && HOME.ts && Date.now() - HOME.ts < HOME_TTL)) return false;
   HOME.loading = true;
-  const [w, h, d, n] = await Promise.allSettled([
+  const [w, h, d, n, k] = await Promise.allSettled([
     fetch(meteoURL('-20.3155', '-40.3128')).then((r) => r.json()),
     loadHere(),
     fetch('https://economia.awesomeapi.com.br/json/last/USD-BRL').then((r) => r.json()),
     api('/api/home/news'),
+    isAdm() ? api('/api/home/sby') : Promise.resolve(null),
   ]);
+  HOME.sby = k.status === 'fulfilled' ? k.value : null;
   HOME.weather = w.status === 'fulfilled' ? w.value : null;
   HOME.here = h.status === 'fulfilled' ? h.value : null;
   HOME.dollar = d.status === 'fulfilled' ? (d.value.USDBRL || null) : null;
@@ -1547,65 +1584,114 @@ function homeAgenda() {
   return items.sort((a, b) => (a.late === b.late ? 0 : a.late ? -1 : 1));
 }
 
-function locHTML(label, data, extra = '') {
-  const cur = data?.current, day = data?.daily;
-  if (!cur) return '';
-  const desc = WMO[cur.weather_code] || '—';
-  const det = day ? ` <span class="h-sub">máx ${Math.round(day.temperature_2m_max?.[0] ?? 0)}° · mín ${Math.round(day.temperature_2m_min?.[0] ?? 0)}° · 🌧 ${day.precipitation_probability_max?.[0] ?? '–'}%</span>` : '';
-  return `<div class="h-loc"><b>${Math.round(cur.temperature_2m)}°</b> ${desc} · ${esc(label)}${extra}${det}</div>`;
-}
+const fmtBRL = (v) => v == null ? '–' : 'R$ ' + Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
 
 function homeHTML() {
-  const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long' });
-  const clima = (HOME.weather || HOME.here)
-    ? locHTML('Vitória/ES', HOME.weather) +
-      (HOME.here ? locHTML(`📍 ${HOME.here.name}`, HOME.here.data)
-        : '<div class="h-sub">📍 permita a localização no navegador pra ver o tempo de onde você estiver</div>')
+  const agora = new Date();
+  const hoje = agora.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'long', day: 'numeric', month: 'long' });
+  const hora = agora.getHours();
+  const oi = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+
+  // --- tempo (clicável) ---
+  const cur = HOME.weather?.current;
+  const day = HOME.weather?.daily;
+  const clima = cur ? `
+    <div class="h2-temp">${Math.round(cur.temperature_2m)}°</div>
+    <div class="h2-tempsub">${WMO[cur.weather_code] || ''}<br><span class="dim">Vitória/ES · máx ${Math.round(day?.temperature_2m_max?.[0] ?? 0)}° mín ${Math.round(day?.temperature_2m_min?.[0] ?? 0)}° · 🌧 ${day?.precipitation_probability_max?.[0] ?? '–'}%</span></div>
+    ${HOME.here?.data?.current ? `<div class="h2-here">📍 ${esc(HOME.here.name)}: <b>${Math.round(HOME.here.data.current.temperature_2m)}°</b> ${WMO[HOME.here.data.current.weather_code] || ''}</div>` : ''}
+    <span class="h2-more">ver previsão ›</span>`
     : `<div class="h-sub">${HOME.ts ? 'sem dados de clima' : 'carregando…'}</div>`;
+
+  // --- indicadores (dólar + SBY) ---
   const dlr = HOME.dollar;
   const pct = dlr ? Number(dlr.pctChange) : 0;
-  const dolar = dlr ? `
-    <div class="h-big">R$ ${Number(dlr.bid).toFixed(2)}</div>
-    <div class="h-sub"><span class="${pct >= 0 ? 'h-up' : 'h-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span> hoje</div>`
-    : `<div class="h-sub">${HOME.ts ? 'sem cotação' : 'carregando…'}</div>`;
+  const kpis = [];
+  if (dlr) kpis.push({ k: 'Dólar', v: 'R$ ' + Number(dlr.bid).toFixed(2), sub: `<span class="${pct >= 0 ? 'h-up' : 'h-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span>` });
+  const sb = HOME.sby;
+  if (sb && (sb.fech_anterior || sb.vendas_mes != null)) {
+    if (sb.vendas_mes != null) kpis.push({ k: `Vendas SBY ${sb.mes_atual || ''}`, v: fmtBRL(sb.vendas_mes), sub: 'mês corrente', sby: 1 });
+    if (sb.fech_anterior) kpis.push({ k: `Faturamento ${String(sb.fech_anterior.mes).padStart(2, '0')}/${sb.fech_anterior.ano}`, v: fmtBRL(sb.fech_anterior.total_faturamento), sub: 'último fechamento', sby: 1 });
+    if (sb.caixa) kpis.push({ k: 'Caixa SBY', v: fmtBRL(sb.caixa.saldo_total), sub: 'saldo em ' + new Date(sb.caixa.data + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), sby: 1 });
+    if (sb.a_receber != null && Number(sb.a_receber) > 0) kpis.push({ k: 'A receber', v: fmtBRL(sb.a_receber), sub: 'em aberto', sby: 1 });
+    if (sb.inadimplencia != null) kpis.push({ k: 'Inadimplência', v: fmtBRL(sb.inadimplencia), sub: 'SBY', sby: 1, late: 1 });
+  }
+  const kpiHTML = kpis.map((x) => `<div class="h2-kpi ${x.sby ? 'sby' : ''}" ${x.sby ? 'data-sby="1"' : ''}>
+    <span class="h2-kpik">${esc(x.k)}</span><span class="h2-kpiv ${x.late ? 'late' : ''}">${x.v}</span><span class="h2-kpis">${x.sub || ''}</span></div>`).join('');
+
+  // --- agenda de hoje/amanhã (clicável) ---
+  let gcal;
+  if (GCAL === null) gcal = '<div class="h-sub">carregando agenda…</div>';
+  else if (!GCAL.connected) gcal = `<div class="h-sub" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">Conecte seu Google Calendar pra ver a agenda aqui.<button class="btn primary" id="gcal-connect">🔗 Conectar</button></div>`;
+  else if (!GCAL.events.length) gcal = '<div class="h-sub">nada na agenda dos próximos 7 dias ✨</div>';
+  else {
+    const fmtEv = (e) => {
+      const d = new Date(e.start);
+      const dia = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+      const hora2 = e.all_day ? 'dia todo' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      return `<div class="h-item h2-ev" data-hev="${esc(e.id)}"><span class="ag-dot" style="background:${e.color || 'var(--accent)'}"></span><span class="h-when">${dia} ${hora2}</span><span style="flex:1">${esc(e.summary)}</span></div>`;
+    };
+    gcal = `<div class="h-list">${GCAL.events.slice(0, 7).map(fmtEv).join('')}</div>`;
+  }
+
+  // --- tarefas de hoje ---
   const ag = homeAgenda();
   const tarefas = ag.length ? `<div class="h-list">${ag.slice(0, 10).map((i) =>
     `<div class="h-item"><span class="h-when ${i.late ? 'late' : ''}">${esc(i.when)}</span><a href="#" data-open-task="${esc(i.slug)}">${esc(i.title)}</a></div>`).join('')}</div>`
     : '<div class="h-sub">nada com prazo pra hoje 🎉</div>';
-  let gcal;
-  if (GCAL === null) {
-    gcal = `<div class="h-gcal" style="flex:1;display:flex;align-items:center;justify-content:center">carregando agenda…</div>`;
-  } else if (!GCAL.connected) {
-    gcal = `<div class="h-gcal" style="flex:1;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;text-align:center">
-      Conecte seu Google Calendar pra ver a agenda aqui<br>(e o IAGO passa a enxergar e marcar compromissos)
-      <button class="btn primary" id="gcal-connect">🔗 Conectar Google Calendar</button></div>`;
-  } else if (!GCAL.events.length) {
-    gcal = `<div class="h-gcal" style="flex:1;display:flex;align-items:center;justify-content:center">✅ conectado · nada na agenda dos próximos 7 dias</div>`;
-  } else {
-    const fmtEv = (e) => {
-      const d = new Date(e.start);
-      const dia = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-      const hora = e.all_day ? 'dia todo' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      return `<div class="h-item"><span class="h-when">${dia} ${hora}</span><span style="flex:1">${esc(e.summary)}</span>${e.location ? `<span class="src">${esc(e.location)}</span>` : ''}</div>`;
-    };
-    gcal = GCAL.events.slice(0, 8).map(fmtEv).join('') + `<div style="text-align:right;display:flex;gap:6px;justify-content:flex-end"><button class="btn small" id="gcal-swap" title="trocar de conta Google">⇄ trocar conta</button><button class="btn small" id="gcal-off" title="desconectar">×</button></div>`;
-  }
-  const unent = (s) => { const d = document.createElement('textarea'); d.innerHTML = String(s ?? ''); return d.value; };
-  const news = HOME.news?.length ? `<div class="h-list">${HOME.news.slice(0, 9).map((n) =>
-    `<div class="h-item"><span class="src">${esc(n.source)}</span><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(unent(n.title))}</a></div>`).join('')}</div>`
-    : `<div class="h-sub">${HOME.ts ? 'sem notícias no momento (configure as fontes pedindo ao gerente no chat)' : 'carregando…'}</div>`;
+
+  const unent = (x) => { const d = document.createElement('textarea'); d.innerHTML = String(x ?? ''); return d.value; };
+  const news = HOME.news?.length ? `<div class="h-list h2-news">${HOME.news.slice(0, 10).map((n) =>
+    `<a class="h2-newsitem" href="${esc(n.link)}" target="_blank" rel="noopener"><span class="src">${esc(n.source)}</span>${esc(unent(n.title))}</a>`).join('')}</div>`
+    : `<div class="h-sub">${HOME.ts ? 'sem notícias agora' : 'carregando…'}</div>`;
+
   return `<div class="home-wrap">
-    <div class="home-head"><h2>${hoje.charAt(0).toUpperCase() + hoje.slice(1)}</h2>
+    <div class="home-head">
+      <div><h2>${oi}, ${esc((ME?.name || '').split(' ')[0] || '')} 👋</h2><span class="dim" style="text-transform:capitalize">${hoje}</span></div>
+      <span class="spacer" style="flex:1"></span>
       <span class="em-note" id="h-refresh-note">${HOME.ts ? 'atualizado ' + new Date(HOME.ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
-      <button class="btn small" id="h-refresh">↻ atualizar</button></div>
+      <button class="btn small" id="h-refresh">↻</button>
+    </div>
+    ${kpiHTML ? `<div class="h2-kpis-row">${kpiHTML}</div>` : ''}
     <div class="home-grid">
-      <div class="h-card h-c2"><h3>🌤 Tempo</h3>${clima}</div>
-      <div class="h-card h-c1 mini"><h3>💵 Dólar</h3>${dolar}</div>
-      <div class="h-card h-c3 h-tall"><h3>📅 Agenda (Google)</h3>${gcal}</div>
-      <div class="h-card h-c3 h-tall"><h3>✅ Tarefas & projetos de hoje</h3>${tarefas}</div>
-      <div class="h-card h-c3 h-tall"><h3>📰 Notícias</h3>${news}</div>
+      <div class="h-card h2-click" id="h2-weather"><h3>Tempo</h3>${clima}</div>
+      <div class="h-card"><h3>Agenda <button class="btn small" id="h2-goag" style="float:right">abrir ›</button></h3>${gcal}</div>
+      <div class="h-card"><h3>Tarefas de hoje <button class="btn small" id="h2-gotasks" style="float:right">abrir ›</button></h3>${tarefas}</div>
+      <div class="h-card h2-newscard"><h3>Notícias</h3>${news}</div>
     </div>
   </div>`;
+}
+
+function hpop(html) {
+  let p = $('#hpop');
+  if (!p) {
+    p = document.createElement('div');
+    p.id = 'hpop';
+    p.innerHTML = '<div id="hpop-box"></div>';
+    p.addEventListener('click', (e) => { if (e.target.id === 'hpop') p.classList.remove('on'); });
+    document.body.appendChild(p);
+  }
+  p.querySelector('#hpop-box').innerHTML = html + '<div style="text-align:right;margin-top:14px"><button class="btn" onclick="document.querySelector(\'#hpop\').classList.remove(\'on\')">fechar</button></div>';
+  p.classList.add('on');
+}
+
+function weatherPop() {
+  const w = HOME.weather;
+  if (!w?.daily) return;
+  const dias = w.daily.time.map((t, i) => {
+    const d = new Date(t + 'T12:00:00');
+    const nome = i === 0 ? 'Hoje' : d.toLocaleDateString('pt-BR', { weekday: 'short' });
+    return `<div class="wp-day"><span class="wp-nome">${nome}</span><span>${(WMO[w.daily.weather_code?.[i]] || '').split(' ')[0]}</span>
+      <span class="wp-tmax">${Math.round(w.daily.temperature_2m_max[i])}°</span><span class="dim">${Math.round(w.daily.temperature_2m_min[i])}°</span>
+      <span class="dim">🌧 ${w.daily.precipitation_probability_max?.[i] ?? '–'}%</span></div>`;
+  }).join('');
+  const nowIdx = new Date().getHours();
+  const horas = (w.hourly?.time || []).slice(nowIdx, nowIdx + 12).map((t, i) => {
+    const h = new Date(t).getHours();
+    return `<div class="wp-hora"><span>${String(h).padStart(2, '0')}h</span><b>${Math.round(w.hourly.temperature_2m[nowIdx + i])}°</b><span class="dim">${w.hourly.precipitation_probability?.[nowIdx + i] ?? ''}%</span></div>`;
+  }).join('');
+  hpop(`<h3 style="margin-bottom:12px">🌤 Previsão · Vitória/ES</h3>
+    <div class="wp-horas">${horas}</div>
+    <div style="margin-top:14px">${dias}</div>`);
 }
 
 function bindHome(main) {
@@ -1613,15 +1699,20 @@ function bindHome(main) {
   if (btn) btn.onclick = async () => { btn.disabled = true; await loadHome(true); if (TAB === 'hoje') { main.innerHTML = homeHTML(); bindHome(main); } };
   const gc = main.querySelector('#gcal-connect');
   if (gc) gc.onclick = () => { location.href = `${GCAL_URL}?start=1&t=${encodeURIComponent(TOKEN || KEY)}`; };
-  const gsw = main.querySelector('#gcal-swap');
-  if (gsw) gsw.onclick = gcalSwap;
-  const goff = main.querySelector('#gcal-off');
-  if (goff) goff.onclick = async () => {
-    if (!confirm('Desconectar seu Google Calendar?')) return;
-    await fetch(`${GCAL_URL}?disconnect=1`, { method: 'POST', headers: authHeaders() });
-    GCAL = { connected: false, events: [] };
-    if (TAB === 'hoje') { main.innerHTML = homeHTML(); bindHome(main); }
-  };
+  const w = main.querySelector('#h2-weather');
+  if (w) w.onclick = weatherPop;
+  const goag = main.querySelector('#h2-goag');
+  if (goag) goag.onclick = () => { TAB = 'agendag'; render(); };
+  const gotasks = main.querySelector('#h2-gotasks');
+  if (gotasks) gotasks.onclick = () => { TAB = 'projetos'; render(); };
+  main.querySelectorAll('[data-sby]').forEach((el) => el.onclick = () => window.open('https://fg-bay.vercel.app', '_blank'));
+  main.querySelectorAll('[data-hev]').forEach((el) => el.addEventListener('click', () => {
+    const e = (GCAL?.events || []).find((x) => x.id === el.dataset.hev);
+    if (!e) return;
+    const ini = e.all_day ? 'dia todo' : new Date(e.start).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    hpop(`<h3>${esc(e.summary)}</h3><div class="dim" style="margin-top:8px">🕐 ${ini}${e.calendar ? '<br>📅 ' + esc(e.calendar) : ''}${e.location ? '<br>📍 ' + esc(e.location) : ''}</div>
+      <button class="btn primary" style="margin-top:14px" onclick="document.querySelector('#hpop').classList.remove('on');TAB='agendag';render()">abrir na Agenda</button>`);
+  }));
   main.querySelectorAll('[data-open-task]').forEach((a) => a.addEventListener('click', (e) => {
     e.preventDefault();
     TAB = 'projetos'; render();
@@ -1647,25 +1738,30 @@ const IMP = [
   { key: 'info',    label: 'ℹ️ Outros triados' },
 ];
 
-const EMAIL_PENDING = new Map(); // spark_id -> acao escolhida (aplica em lote no worker)
+let EM_SHOW_READ = false;    // mostrar tambem os ja lidos
+const EM_BUSY_IDS = new Map(); // spark_id -> texto de status da acao em andamento
 const EM_ACTS = [
-  { act: 'markAsSeen', label: '✓ lido' },
-  { act: 'archive', label: '📥 arquivar' },
-  { act: 'markAsSpam', label: '🚫 spam' },
-  { act: 'moveToTrash', label: '🗑 lixo' },
+  { act: 'markAsSeen', label: 'marcar lido', title: 'marca como lido no Spark e some da lista' },
+  { act: 'archive', label: 'arquivar', title: 'tira da caixa de entrada do Spark' },
+  { act: 'markAsSpam', label: 'spam' },
+  { act: 'moveToTrash', label: 'lixeira' },
 ];
 
 function emItemHTML(m) {
   const from = m.from_name || m.from_addr || '?';
   const when = m.email_date ? fmtDateTime(m.email_date) : '';
-  const pend = m.spark_id ? EMAIL_PENDING.get(m.spark_id) : null;
-  const acts = m.spark_id ? `<div class="em-acts">${pend
-    ? `<span class="em-pend">${esc(EM_ACTS.find((a) => a.act === pend)?.label || pend)} pendente</span><button class="btn small em-act" data-id="${m.spark_id}" data-act="">desfazer</button>`
-    : EM_ACTS.map((a) => `<button class="btn small em-act" data-id="${m.spark_id}" data-act="${a.act}">${a.label}</button>`).join('')
-  }</div>` : '';
+  const isRead = m.unread === false;
+  const st = m.spark_id ? EM_BUSY_IDS.get(m.spark_id) : null;
+  let acts = '';
+  if (m.spark_id) {
+    acts = st
+      ? `<div class="em-acts"><span class="em-pend">${esc(st)}</span></div>`
+      : `<div class="em-acts">${EM_ACTS.filter((a) => !(isRead && a.act === 'markAsSeen'))
+          .map((a) => `<button class="btn small em-act" data-id="${m.spark_id}" data-act="${a.act}" ${a.title ? `title="${a.title}"` : ''}>${a.label}</button>`).join('')}</div>`;
+  }
   const subj = esc(m.subject || '(sem assunto)');
-  return `<div class="em-item ${esc(m.importance)} ${pend ? 'pend' : ''}">
-    <span class="em-sub">${m.spark_id ? `<a href="#" class="em-open" data-id="${m.spark_id}" title="ler aqui no painel">${subj}</a>` : subj}${m.unread === false ? ' <span class="em-meta">· lido</span>' : ''}</span>
+  return `<div class="em-item ${esc(m.importance)} ${isRead ? 'read' : ''}">
+    <span class="em-sub">${isRead ? '' : '<span class="em-unread-dot" title="nao lido"></span>'}${m.spark_id ? `<a href="#" class="em-open" data-id="${m.spark_id}" title="ler aqui no painel">${subj}</a>` : subj}${isRead ? ' <span class="em-badge">lido</span>' : ''}</span>
     <span class="em-meta">${esc(from)}${m.account ? ' · ' + esc(m.account) : ''}${when ? ' · ' + when : ''}</span>
     ${m.summary ? `<span class="em-sum">${esc(m.summary)}</span>` : ''}
     ${m.spark_link ? `<a href="${esc(m.spark_link)}" target="_blank" rel="noopener">Abrir no Spark ↗</a>` : ''}
@@ -1678,9 +1774,13 @@ function emailHTML(d) {
   const seen = w.last_seen_at ? fmtDateTime(w.last_seen_at) : 'nunca';
   const run = d.last_run;
   const runTxt = run ? `${fmtDateTime(run.finished_at || run.started_at)} (${(run.stats && run.stats.items) ?? 0} itens)` : 'nenhuma ainda';
+  let nRead = 0;
   const groups = IMP.map(({ key, label }) => {
-    const items = (d.emails || []).filter((m) => m.importance === key);
-    if (!items.length) return '';
+    const all = (d.emails || []).filter((m) => m.importance === key);
+    if (!all.length) return '';
+    const items = EM_SHOW_READ ? all : all.filter((m) => m.unread !== false || EM_BUSY_IDS.has(m.spark_id));
+    nRead += all.length - items.length;
+    if (!items.length) return `<div class="em-group"><h3>${label}</h3><div class="em-note" style="padding:2px 0 8px">tudo lido por aqui ✓</div></div>`;
     return `<div class="em-group"><h3>${label}</h3>${items.map(emItemHTML).join('')}</div>`;
   }).join('');
   const routines = (d.routines || []).map((r) => `
@@ -1700,9 +1800,10 @@ function emailHTML(d) {
     <div class="em-actions">
       <button class="btn primary" id="em-check" ${w.online ? '' : 'disabled title="worker offline"'}>📥 Checar caixa agora</button>
       <button class="btn" id="em-triage" ${w.online ? '' : 'disabled title="worker offline"'}>🧹 Triagem completa agora</button>
-      ${EMAIL_PENDING.size ? `<button class="btn primary" id="em-apply" ${w.online ? '' : 'disabled title="worker offline"'}>✔ Aplicar ${EMAIL_PENDING.size} ação(ões) no Spark</button>` : ''}
+      <button class="btn" id="em-showread">${EM_SHOW_READ ? 'ocultar lidos' : `mostrar lidos${nRead ? ` (${nRead})` : ''}`}</button>
       <span class="em-note" id="em-msg"></span>
     </div>
+    <div class="em-note" style="margin:-4px 0 4px">Os botões de cada e-mail agem <b>na hora</b> direto no Spark do Mac. "Marcar lido" tira o e-mail desta lista (use "mostrar lidos" pra rever).</div>
     <div id="em-checkout">${EMAIL_CHECK_OUT ? `<div class="em-out">${EMAIL_CHECK_OUT}</div>` : ''}</div>
     ${routines ? `<div class="em-group"><h3>Rotinas</h3>${routines}</div>` : ''}
     ${groups || '<div class="empty">Nenhum e-mail triado ainda — roda uma triagem pra popular esta aba.</div>'}
@@ -1776,43 +1877,43 @@ function bindEmail(main) {
     await post('/api/email/enqueue', { kind: 'triage', notify: true });
     $('#em-msg').textContent = 'triagem enfileirada — relatório chega no Telegram 📬';
   };
-  // marcar/desmarcar ações pendentes nos e-mails
-  main.querySelectorAll('.em-act').forEach((b) => b.onclick = () => {
+  const emRedraw = () => { if (TAB !== 'email') return; main.innerHTML = emailHTML(EMAIL_DATA); bindEmail(main); };
+  const btnShowRead = $('#em-showread', main);
+  if (btnShowRead) btnShowRead.onclick = () => { EM_SHOW_READ = !EM_SHOW_READ; emRedraw(); };
+  // acoes por e-mail: aplicam NA HORA no Spark (um job por clique, com feedback no item)
+  main.querySelectorAll('.em-act').forEach((b) => b.onclick = async () => {
     const id = Number(b.dataset.id);
-    if (b.dataset.act) EMAIL_PENDING.set(id, b.dataset.act);
-    else EMAIL_PENDING.delete(id);
-    main.innerHTML = emailHTML(EMAIL_DATA);
-    bindEmail(main);
-  });
-  const btnApply = $('#em-apply', main);
-  if (btnApply) btnApply.onclick = async () => {
-    if (EMAIL_BUSY || !EMAIL_PENDING.size) return;
-    EMAIL_BUSY = true;
-    $('#em-msg').textContent = 'aplicando no Spark…';
+    const act = b.dataset.act;
+    if (EM_BUSY_IDS.has(id)) return;
+    const label = EM_ACTS.find((x) => x.act === act)?.label || act;
+    EM_BUSY_IDS.set(id, `${label}: aplicando no Spark…`);
+    emRedraw();
     try {
-      // agrupa por ação -> um job por ação
-      const groups = {};
-      for (const [id, act] of EMAIL_PENDING) (groups[act] ||= []).push(id);
-      const jobs = [];
-      for (const [act, ids] of Object.entries(groups)) {
-        const { id } = await post('/api/email/enqueue', { kind: 'action', params: { action: act, ids } });
-        jobs.push(id);
-      }
-      for (let i = 0; i < 40 && jobs.length; i++) {
+      const { id: jid } = await post('/api/email/enqueue', { kind: 'action', params: { action: act, ids: [id] } });
+      let done = false;
+      for (let i = 0; i < 24; i++) {
         await new Promise((r) => setTimeout(r, 2500));
-        for (const jid of [...jobs]) {
-          const j = await api(`/api/email/job?id=${jid}`);
-          if (j.status === 'done') jobs.splice(jobs.indexOf(jid), 1);
-          if (j.status === 'error') { $('#em-msg').textContent = 'erro: ' + (j.error || '?'); jobs.splice(jobs.indexOf(jid), 1); }
+        const j = await api(`/api/email/job?id=${jid}`);
+        if (j.status === 'done') { done = true; break; }
+        if (j.status === 'error') {
+          EM_BUSY_IDS.set(id, `erro: ${j.error || '?'}`);
+          emRedraw();
+          setTimeout(() => { EM_BUSY_IDS.delete(id); emRedraw(); }, 5000);
+          return;
         }
       }
-      EMAIL_PENDING.clear();
-      $('#em-msg').textContent = 'aplicado ✓';
-    } catch (e) { $('#em-msg').textContent = 'erro ao aplicar'; }
-    EMAIL_BUSY = false;
-    EMAIL_DATA = await api('/api/email/summary').catch(() => EMAIL_DATA);
-    if (TAB === 'email') { main.innerHTML = emailHTML(EMAIL_DATA); bindEmail(main); }
-  };
+      const m = (EMAIL_DATA?.emails || []).find((x) => x.spark_id === id);
+      if (act === 'markAsSeen') { if (m) m.unread = false; }
+      else if (EMAIL_DATA) EMAIL_DATA.emails = (EMAIL_DATA.emails || []).filter((x) => x.spark_id !== id);
+      EM_BUSY_IDS.set(id, done ? '✓ feito' : '✓ enviado (o worker confirma já já)');
+      emRedraw();
+      setTimeout(() => { EM_BUSY_IDS.delete(id); emRedraw(); }, 2200);
+    } catch {
+      EM_BUSY_IDS.set(id, 'erro ao enviar pro worker');
+      emRedraw();
+      setTimeout(() => { EM_BUSY_IDS.delete(id); emRedraw(); }, 5000);
+    }
+  });
   main.querySelectorAll('.em-save-routine').forEach((b) => b.onclick = async () => {
     const row = b.closest('.em-routine');
     const times = row.querySelector('.em-times').value.split(',').map((t) => t.trim()).filter(Boolean);
@@ -2146,7 +2247,7 @@ $('#login-card').addEventListener('submit', async (e) => {
 
 $('#btn-pvt').onclick = async () => {
   PVT = !PVT;
-  if (PVT) { TAB = 'projetos'; VIEW = 'kanban'; PROJ_OPEN = null; }
+  if (PVT) { if (TAB !== 'projx') TAB = 'projetos'; VIEW = 'kanban'; PROJ_OPEN = null; }
   document.body.classList.toggle('pvt', PVT);
   $('#btn-pvt').textContent = PVT ? '🔓 sair' : '🔒';
   closeModal();
