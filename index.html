@@ -335,7 +335,9 @@
   .home-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .home-head h2 { margin: 0; font-size: 17px; font-weight: 650; }
   .home-head .em-note { margin-left: auto; }
-  .home-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .home-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 1000px) { .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 720px) { .home-grid { grid-template-columns: 1fr; } }
   .h-card { border: 1px solid var(--grid); border-radius: 12px; background: var(--page); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .h-card h3 { margin: 0; font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; }
   .h-c2 { grid-column: span 2; } .h-c1 { grid-column: span 1; } .h-c3 { grid-column: span 3; }
