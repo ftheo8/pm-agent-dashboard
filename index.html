@@ -539,6 +539,8 @@ function applyRole() {
 }
 let TASKS = [];
 let PROJECTS = [];    // entidade Projeto (hierarquia própria; tarefas vinculam por project_id)
+const GCAL_URL = 'https://iucqufccyboilasswnun.supabase.co/functions/v1/gcal';
+let GCAL = null; // agenda Google do usuário: null = carregando, {connected, events}
 let PROJ_OPEN = null; // id do projeto aberto na página ampla
 let TAB = 'hoje';     // hoje | projetos | email
 let VIEW = 'kanban';  // subview da aba projetos
@@ -639,6 +641,9 @@ async function load() {
   PROJECTS = projects || [];
   USERS = (users || []).filter((u) => u.active !== false);
   if (ME) { const self = USERS.find((u) => u.id === ME.id); if (self && self.avatar !== undefined) ME.avatar = self.avatar; }
+  fetch(`${GCAL_URL}?events=1&days=7`, { headers: authHeaders() }).then((r) => r.json())
+    .then((g) => { const antes = JSON.stringify(GCAL); GCAL = g; if (TAB === 'hoje' && antes !== JSON.stringify(g)) render(); })
+    .catch(() => { if (GCAL === null) GCAL = { connected: false, events: [] }; });
   TASKS.sort((a, b) => a.title.localeCompare(b.title, 'pt'));
   $('#meta').textContent = `${visible().length} projetos · atualizado ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   renderFilters();
@@ -1481,8 +1486,24 @@ function homeHTML() {
   const tarefas = ag.length ? `<div class="h-list">${ag.slice(0, 10).map((i) =>
     `<div class="h-item"><span class="h-when ${i.late ? 'late' : ''}">${esc(i.when)}</span><a href="#" data-open-task="${esc(i.slug)}">${esc(i.title)}</a></div>`).join('')}</div>`
     : '<div class="h-sub">nada com prazo pra hoje 🎉</div>';
-  const gcal = `<div class="h-gcal" style="flex:1;display:flex;align-items:center;justify-content:center;text-align:center">
-    Seu Google Calendar vai aparecer aqui —<br>sincronização na próxima fase (OAuth)</div>`;
+  let gcal;
+  if (GCAL === null) {
+    gcal = `<div class="h-gcal" style="flex:1;display:flex;align-items:center;justify-content:center">carregando agenda…</div>`;
+  } else if (!GCAL.connected) {
+    gcal = `<div class="h-gcal" style="flex:1;display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;text-align:center">
+      Conecte seu Google Calendar pra ver a agenda aqui<br>(e o IAGO passa a enxergar e marcar compromissos)
+      <button class="btn primary" id="gcal-connect">🔗 Conectar Google Calendar</button></div>`;
+  } else if (!GCAL.events.length) {
+    gcal = `<div class="h-gcal" style="flex:1;display:flex;align-items:center;justify-content:center">✅ conectado · nada na agenda dos próximos 7 dias</div>`;
+  } else {
+    const fmtEv = (e) => {
+      const d = new Date(e.start);
+      const dia = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+      const hora = e.all_day ? 'dia todo' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      return `<div class="h-item"><span class="h-when">${dia} ${hora}</span><span style="flex:1">${esc(e.summary)}</span>${e.location ? `<span class="src">${esc(e.location)}</span>` : ''}</div>`;
+    };
+    gcal = GCAL.events.slice(0, 8).map(fmtEv).join('') + `<div style="text-align:right"><button class="btn small" id="gcal-off" title="desconectar">×</button></div>`;
+  }
   const unent = (s) => { const d = document.createElement('textarea'); d.innerHTML = String(s ?? ''); return d.value; };
   const news = HOME.news?.length ? `<div class="h-list">${HOME.news.slice(0, 9).map((n) =>
     `<div class="h-item"><span class="src">${esc(n.source)}</span><a href="${esc(n.link)}" target="_blank" rel="noopener">${esc(unent(n.title))}</a></div>`).join('')}</div>`
@@ -1504,6 +1525,15 @@ function homeHTML() {
 function bindHome(main) {
   const btn = $('#h-refresh', main);
   if (btn) btn.onclick = async () => { btn.disabled = true; await loadHome(true); if (TAB === 'hoje') { main.innerHTML = homeHTML(); bindHome(main); } };
+  const gc = main.querySelector('#gcal-connect');
+  if (gc) gc.onclick = () => { location.href = `${GCAL_URL}?start=1&t=${encodeURIComponent(TOKEN || KEY)}`; };
+  const goff = main.querySelector('#gcal-off');
+  if (goff) goff.onclick = async () => {
+    if (!confirm('Desconectar seu Google Calendar?')) return;
+    await fetch(`${GCAL_URL}?disconnect=1`, { method: 'POST', headers: authHeaders() });
+    GCAL = { connected: false, events: [] };
+    if (TAB === 'hoje') { main.innerHTML = homeHTML(); bindHome(main); }
+  };
   main.querySelectorAll('[data-open-task]').forEach((a) => a.addEventListener('click', (e) => {
     e.preventDefault();
     TAB = 'projetos'; render();
@@ -1947,6 +1977,10 @@ async function boot() {
   } catch { return; } // 401 já abriu o login
   applyRole();
   load();
+}
+if (location.hash.includes('gcal=ok')) {
+  history.replaceState(null, '', location.pathname);
+  setTimeout(() => alert('Google Calendar conectado! ✅ Sua agenda já aparece na aba Hoje.'), 400);
 }
 boot();
 setInterval(() => {
