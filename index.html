@@ -399,6 +399,21 @@
   .set-user .dim { font-size: 11.5px; }
   .set-user code { background: var(--page); border: 1px solid var(--baseline); border-radius: 6px; padding: 1px 6px; font-size: 12px; }
   #user-chip { font-size: 11.5px; color: var(--muted); }
+  .ag-wrap { display: grid; grid-template-columns: 250px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 760px) { .ag-wrap { grid-template-columns: 1fr; } }
+  .ag-side { background: var(--surface-1); border: 1px solid var(--border); border-radius: 13px; padding: 14px; position: sticky; top: 70px; }
+  .ag-side h3 { font-size: 13px; margin-bottom: 10px; }
+  .ag-cal { display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 4px 0; cursor: pointer; }
+  .ag-cal input { accent-color: var(--accent); }
+  .ag-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .ag-main { display: flex; flex-direction: column; gap: 14px; }
+  .ag-day { background: var(--surface-1); border: 1px solid var(--border); border-radius: 13px; padding: 12px 14px; }
+  .ag-day h4 { font-size: 12.5px; text-transform: capitalize; color: var(--muted); margin-bottom: 8px; }
+  .ag-ev { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--grid); font-size: 13.5px; flex-wrap: wrap; }
+  .ag-ev:first-of-type { border-top: 0; }
+  .ag-hora { font-weight: 600; min-width: 58px; font-size: 12.5px; }
+  .ag-tit { flex: 1; }
+  .ag-calchip { background: var(--chip, var(--page)); border: 1px solid var(--baseline); border-radius: 999px; padding: 1px 8px; font-size: 10.5px; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -411,6 +426,7 @@
   <nav id="nav">
     <button data-tab="hoje" class="active">🏠 Hoje</button>
     <button data-tab="projetos">📋 Projetos</button>
+    <button data-tab="agendag">📅 Agenda</button>
     <button data-tab="email">📬 E-mail</button>
   </nav>
   <nav id="subnav">
@@ -541,6 +557,8 @@ let TASKS = [];
 let PROJECTS = [];    // entidade Projeto (hierarquia própria; tarefas vinculam por project_id)
 const GCAL_URL = 'https://iucqufccyboilasswnun.supabase.co/functions/v1/gcal';
 let GCAL = null; // agenda Google do usuário: null = carregando, {connected, events}
+let GCALS = null;  // lista de calendários da conta {calendars:[...]}
+let AGEV = null;   // eventos da aba Agenda (21 dias)
 let PROJ_OPEN = null; // id do projeto aberto na página ampla
 let TAB = 'hoje';     // hoje | projetos | email
 let VIEW = 'kanban';  // subview da aba projetos
@@ -661,6 +679,7 @@ function render() {
   $('#btn-new').style.display = proj ? '' : 'none';
   $('#show-arch').closest('label').style.display = proj ? '' : 'none';
   if (TAB === 'hoje') { renderHome(main); return; }
+  if (TAB === 'agendag') { renderAgendaG(main); return; }
   if (TAB === 'email') { renderEmail(main); return; }
   if (VIEW === 'projetos') { renderProjetos(main); return; }
   if (!visible().length) { main.innerHTML = '<div class="empty">Nenhum projeto por aqui.</div>'; return; }
@@ -1502,7 +1521,7 @@ function homeHTML() {
       const hora = e.all_day ? 'dia todo' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       return `<div class="h-item"><span class="h-when">${dia} ${hora}</span><span style="flex:1">${esc(e.summary)}</span>${e.location ? `<span class="src">${esc(e.location)}</span>` : ''}</div>`;
     };
-    gcal = GCAL.events.slice(0, 8).map(fmtEv).join('') + `<div style="text-align:right"><button class="btn small" id="gcal-off" title="desconectar">×</button></div>`;
+    gcal = GCAL.events.slice(0, 8).map(fmtEv).join('') + `<div style="text-align:right;display:flex;gap:6px;justify-content:flex-end"><button class="btn small" id="gcal-swap" title="trocar de conta Google">⇄ trocar conta</button><button class="btn small" id="gcal-off" title="desconectar">×</button></div>`;
   }
   const unent = (s) => { const d = document.createElement('textarea'); d.innerHTML = String(s ?? ''); return d.value; };
   const news = HOME.news?.length ? `<div class="h-list">${HOME.news.slice(0, 9).map((n) =>
@@ -1527,6 +1546,8 @@ function bindHome(main) {
   if (btn) btn.onclick = async () => { btn.disabled = true; await loadHome(true); if (TAB === 'hoje') { main.innerHTML = homeHTML(); bindHome(main); } };
   const gc = main.querySelector('#gcal-connect');
   if (gc) gc.onclick = () => { location.href = `${GCAL_URL}?start=1&t=${encodeURIComponent(TOKEN || KEY)}`; };
+  const gsw = main.querySelector('#gcal-swap');
+  if (gsw) gsw.onclick = gcalSwap;
   const goff = main.querySelector('#gcal-off');
   if (goff) goff.onclick = async () => {
     if (!confirm('Desconectar seu Google Calendar?')) return;
@@ -1821,6 +1842,105 @@ document.addEventListener('keydown', (e) => {
   else if (CHAT_OPEN) $('#c-close').onclick();
   else closeModal();
 });
+
+/* ================= aba Agenda (Google Calendar completo) ================= */
+async function gcalSwap() {
+  if (!confirm('Trocar a conta Google conectada? A atual será desconectada.')) return;
+  await fetch(`${GCAL_URL}?disconnect=1`, { method: 'POST', headers: authHeaders() });
+  location.href = `${GCAL_URL}?start=1&t=${encodeURIComponent(TOKEN || KEY)}`;
+}
+
+async function loadAgendaG(force = false) {
+  if (!force && GCALS && AGEV) return;
+  const [cals, evs] = await Promise.all([
+    fetch(`${GCAL_URL}?calendars=1`, { headers: authHeaders() }).then((r) => r.json()).catch(() => null),
+    fetch(`${GCAL_URL}?events=1&days=21`, { headers: authHeaders() }).then((r) => r.json()).catch(() => null),
+  ]);
+  GCALS = cals; AGEV = evs;
+}
+
+function renderAgendaG(main) {
+  if (GCAL && !GCAL.connected) {
+    main.innerHTML = `<div class="empty" style="display:flex;flex-direction:column;gap:14px;align-items:center">
+      <div>Conecte seu Google Calendar pra ver e gerenciar sua agenda aqui.</div>
+      <button class="btn primary" id="ag-connect">🔗 Conectar Google Calendar</button></div>`;
+    const b = $('#ag-connect');
+    if (b) b.onclick = () => { location.href = `${GCAL_URL}?start=1&t=${encodeURIComponent(TOKEN || KEY)}`; };
+    return;
+  }
+  if (!GCALS || !AGEV) {
+    main.innerHTML = '<div class="empty">carregando sua agenda…</div>';
+    loadAgendaG().then(() => { if (TAB === 'agendag') renderAgendaG(main); });
+    return;
+  }
+  if (GCALS && GCALS.connected === false) { GCAL = { connected: false, events: [] }; renderAgendaG(main); return; }
+
+  const cals = (GCALS.calendars || []);
+  const evs = (AGEV.events || []);
+  const porDia = {};
+  for (const e of evs) {
+    const d = String(e.start || '').slice(0, 10);
+    (porDia[d] = porDia[d] || []).push(e);
+  }
+  const dias = Object.keys(porDia).sort();
+  const fmtDia = (iso) => {
+    const d = new Date(iso + 'T12:00:00');
+    const nome = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+    return iso === todayISO() ? `HOJE · ${nome}` : nome;
+  };
+  const fmtHora = (e) => e.all_day ? 'dia todo' : new Date(e.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  main.innerHTML = `<div class="ag-wrap">
+    <aside class="ag-side">
+      <h3>📅 Meus calendários</h3>
+      ${cals.map((c) => `<label class="ag-cal"><input type="checkbox" value="${esc(c.id)}" ${c.selected ? 'checked' : ''}>
+        <span class="ag-dot" style="background:${esc(c.color || 'var(--accent)')}"></span>${esc(c.name)}${c.primary ? ' <span class="dim">(principal)</span>' : ''}</label>`).join('')}
+      <div class="muted-note" style="margin-top:10px">marque o que deve aparecer — vale pro painel e pro IAGO</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:16px">
+        <button class="btn small" id="ag-new">＋ novo evento</button>
+        <button class="btn small" id="ag-swap">⇄ trocar conta</button>
+        <button class="btn small" id="ag-off">desconectar</button>
+      </div>
+    </aside>
+    <section class="ag-main">
+      ${dias.length ? dias.map((d) => `<div class="ag-day"><h4>${fmtDia(d)}</h4>
+        ${porDia[d].map((e) => `<div class="ag-ev"><span class="ag-hora">${fmtHora(e)}</span>
+          <span class="ag-tit">${esc(e.summary)}</span>
+          ${e.calendar ? `<span class="ag-calchip">${esc(e.calendar)}</span>` : ''}
+          ${e.location ? `<span class="dim">📍 ${esc(e.location)}</span>` : ''}</div>`).join('')}
+      </div>`).join('') : '<div class="empty">nada nos próximos 21 dias nos calendários marcados 🎉</div>'}
+    </section>
+  </div>`;
+
+  main.querySelectorAll('.ag-cal input').forEach((cb) => cb.onchange = async () => {
+    const ids = [...main.querySelectorAll('.ag-cal input:checked')].map((x) => x.value);
+    await fetch(`${GCAL_URL}?calendars=1`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ ids }) });
+    await loadAgendaG(true);
+    GCAL = null; // força recarga do card da Hoje também
+    if (TAB === 'agendag') renderAgendaG(main);
+  });
+  $('#ag-swap').onclick = gcalSwap;
+  $('#ag-off').onclick = async () => {
+    if (!confirm('Desconectar seu Google Calendar?')) return;
+    await fetch(`${GCAL_URL}?disconnect=1`, { method: 'POST', headers: authHeaders() });
+    GCAL = { connected: false, events: [] }; GCALS = null; AGEV = null;
+    renderAgendaG(main);
+  };
+  $('#ag-new').onclick = async () => {
+    const summary = prompt('Título do evento:');
+    if (!summary || !summary.trim()) return;
+    const quando = prompt('Quando? (ex: 2026-08-22 15:00 — ou só 2026-08-22 pra dia inteiro)');
+    if (!quando) return;
+    const m = quando.trim().match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?$/);
+    if (!m) { alert('formato: AAAA-MM-DD ou AAAA-MM-DD HH:MM'); return; }
+    const start = m[2] ? `${m[1]}T${m[2]}:00-03:00` : m[1];
+    const r = await fetch(`${GCAL_URL}?create=1`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ summary: summary.trim(), start }) });
+    const b2 = await r.json();
+    if (!r.ok) { alert(b2.error || 'erro ao criar'); return; }
+    await loadAgendaG(true);
+    if (TAB === 'agendag') renderAgendaG(main);
+  };
+}
 
 /* ================= login / settings / modo privado ================= */
 $('#login-card').addEventListener('submit', async (e) => {
