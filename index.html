@@ -2,50 +2,43 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IAGO · IA de Gerenciamento Operacional</title>
+<meta name="theme-color" content="#0A0C0B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IAGO">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --surface-1: #fcfcfb;
-    --page: #f9f9f7;
-    --ink: #0b0b0b;
-    --ink-2: #52514e;
-    --muted: #898781;
-    --grid: #e1e0d9;
-    --baseline: #c3c2b7;
-    --border: rgba(11,11,11,0.10);
-    --blue: #2a78d6;
-    --aqua: #1baf7a;
-    --yellow: #eda100;
-    --green: #008300;
-    --violet: #4a3aa7;
-    --red: #e34948;
-    --good: #0ca30c;
-    --accent: var(--blue);
+    --surface-1: #131614;
+    --page: #0A0C0B;
+    --ink: #F2F4F1;
+    --ink-2: #C4CCC5;
+    --muted: #8B948C;
+    --grid: #1E2320;
+    --baseline: #2C332E;
+    --border: rgba(255,255,255,0.07);
+    --blue: #60A5FA;
+    --aqua: #2DD4BF;
+    --yellow: #FBBF24;
+    --green: #3ECF8E;
+    --violet: #A78BFA;
+    --red: #F87171;
+    --good: #3ECF8E;
+    --accent: #3ECF8E;
+    --chip: #181C1A;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --surface-1: #1a1a19;
-      --page: #0d0d0d;
-      --ink: #ffffff;
-      --ink-2: #c3c2b7;
-      --muted: #898781;
-      --grid: #2c2c2a;
-      --baseline: #383835;
-      --border: rgba(255,255,255,0.10);
-      --blue: #3987e5;
-      --aqua: #199e70;
-      --yellow: #c98500;
-      --green: #008300;
-      --violet: #9085e9;
-      --red: #e66767;
-      --good: #0ca30c;
-    }
-  }
+  html { color-scheme: dark; }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--page); color: var(--ink);
-    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 14px/1.5 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
   }
   header {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -414,6 +407,80 @@
   .ag-hora { font-weight: 600; min-width: 58px; font-size: 12.5px; }
   .ag-tit { flex: 1; }
   .ag-calchip { background: var(--chip, var(--page)); border: 1px solid var(--baseline); border-radius: 999px; padding: 1px 8px; font-size: 10.5px; color: var(--muted); }
+
+  /* ===== agenda estilo Google Calendar ===== */
+  .gc-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .gc-rotulo { font-size: 15px; text-transform: capitalize; margin-left: 6px; }
+  .gc-mode { display: flex; gap: 3px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 9px; padding: 3px; }
+  .gc-mode button { border: 0; background: transparent; color: var(--ink-2); font: inherit; font-size: 12.5px; padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+  .gc-mode button.active { background: var(--accent); color: #06130C; font-weight: 600; }
+  .gc-headrow, .gc-adrow { display: grid; grid-template-columns: 46px repeat(7, 1fr); gap: 1px; }
+  .gc-h { text-align: center; padding: 6px 2px; font-size: 11px; color: var(--muted); }
+  .gc-h b { display: block; font-size: 16px; color: var(--ink); font-weight: 600; }
+  .gc-h.today b { color: #06130C; background: var(--accent); border-radius: 50%; width: 28px; height: 28px; line-height: 28px; margin: 2px auto 0; }
+  .gc-adrow { border-bottom: 1px solid var(--baseline); padding-bottom: 4px; margin-bottom: 2px; }
+  .gc-ad { min-height: 6px; display: flex; flex-direction: column; gap: 2px; }
+  .gc-adev { font-size: 10.5px; color: #06130C; font-weight: 600; border-radius: 6px; padding: 2px 6px; cursor: pointer; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .gc-scroll { overflow-y: auto; max-height: calc(100dvh - 240px); border: 1px solid var(--grid); border-radius: 12px; background: var(--surface-1); }
+  .gc-grid { display: grid; grid-template-columns: 46px repeat(7, 1fr); position: relative; }
+  .gc-hours { display: flex; flex-direction: column; }
+  .gc-hour { height: 44px; font-size: 10px; color: var(--muted); text-align: right; padding-right: 6px; border-top: 1px solid var(--grid); }
+  .gc-col { position: relative; border-left: 1px solid var(--grid); cursor: pointer;
+    background-image: repeating-linear-gradient(to bottom, var(--grid) 0 1px, transparent 1px 44px); }
+  .gc-col.today { background-color: rgba(62,207,142,.045); }
+  .gc-ev { position: absolute; left: 2px; right: 3px; border-radius: 7px; padding: 3px 6px; font-size: 11px; line-height: 1.25;
+    color: #06130C; font-weight: 500; overflow: hidden; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .gc-ev b { font-weight: 700; font-size: 10px; }
+  .gc-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--red); z-index: 3; }
+  .gc-now::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+  .ag-nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 720px) {
+    .gc-grid, .gc-headrow, .gc-adrow { grid-template-columns: 34px repeat(7, 1fr); }
+    .gc-ev { font-size: 9.5px; padding: 2px 3px; }
+    .gc-scroll { max-height: calc(100dvh - 300px); }
+  }
+
+  /* ===== polimento Mongaru OS ===== */
+  .btn { border-radius: 10px; transition: border-color .15s, background .15s, transform .08s; }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #06130C; font-weight: 600; }
+  .card, .bigcard { border-radius: 14px; transition: border-color .15s, transform .1s; }
+  .card:hover { border-color: var(--baseline); }
+  input, select, textarea { border-radius: 10px !important; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(62,207,142,.13); }
+  ::selection { background: rgba(62,207,142,.3); }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-thumb { background: var(--baseline); border-radius: 99px; border: 2px solid var(--page); }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  /* ===== celular (iPhone/Android) ===== */
+  @media (max-width: 720px) {
+    header { padding: 10px 12px calc(10px) 12px; gap: 8px; padding-top: max(10px, env(safe-area-inset-top)); }
+    #brand .bt small { display: none; }
+    #brand .bt b { font-size: 15px; }
+    #brand .lg { width: 26px; height: 26px; border-radius: 7px; }
+    #meta, #user-chip { display: none; }
+    nav { overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+    nav::-webkit-scrollbar { display: none; }
+    nav button { padding: 8px 12px; white-space: nowrap; font-size: 13px; }
+    #btn-new, #btn-chat, #btn-pvt, #btn-cfg { padding: 8px 11px; font-size: 13px; }
+    header > a.btn { padding: 8px 11px; font-size: 13px; }
+    #filters { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; padding: 8px 12px; gap: 6px; }
+    #filters::-webkit-scrollbar { display: none; }
+    #filters input, #filters select { flex: none; font-size: 13px; }
+    main { padding: 10px 12px 90px; }
+    /* kanban: um swipe por coluna */
+    .board { display: flex !important; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
+    .board .col { min-width: 84vw; scroll-snap-align: center; }
+    .grid { grid-template-columns: 1fr !important; }
+    /* modal em tela cheia */
+    #overlay { align-items: stretch !important; padding: 0 !important; }
+    #modal { width: 100vw !important; max-width: none !important; height: 100dvh; max-height: none !important; border-radius: 0 !important; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+    /* chat ocupa a tela */
+    #chat { width: 100vw !important; right: 0 !important; border-radius: 0 !important; }
+    .ag-side { position: static; }
+    .qdone { width: 30px; height: 30px; }
+  }
 </style>
 </head>
 <body>
@@ -1843,20 +1910,122 @@ document.addEventListener('keydown', (e) => {
   else closeModal();
 });
 
-/* ================= aba Agenda (Google Calendar completo) ================= */
+/* ================= aba Agenda (estilo Google Calendar) ================= */
 async function gcalSwap() {
   if (!confirm('Trocar a conta Google conectada? A atual será desconectada.')) return;
   await fetch(`${GCAL_URL}?disconnect=1`, { method: 'POST', headers: authHeaders() });
   location.href = `${GCAL_URL}?start=1&t=${encodeURIComponent(TOKEN || KEY)}`;
 }
 
+let AG_MODE = localStorage.getItem('iago_agmode') || 'semana'; // semana | lista
+function agWeekStart(d) { const x = new Date(d); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - x.getDay()); return x.toISOString().slice(0, 10); }
+let AG_START = agWeekStart(new Date());
+let AG_CACHE = {};
+
 async function loadAgendaG(force = false) {
-  if (!force && GCALS && AGEV) return;
+  const from = AG_MODE === 'semana' ? AG_START : todayISO();
+  const days = AG_MODE === 'semana' ? 7 : 21;
+  const key = `${from}:${days}`;
+  if (force) AG_CACHE = {};
   const [cals, evs] = await Promise.all([
-    fetch(`${GCAL_URL}?calendars=1`, { headers: authHeaders() }).then((r) => r.json()).catch(() => null),
-    fetch(`${GCAL_URL}?events=1&days=21`, { headers: authHeaders() }).then((r) => r.json()).catch(() => null),
+    (!GCALS || force) ? fetch(`${GCAL_URL}?calendars=1`, { headers: authHeaders() }).then((r) => r.json()).catch(() => null) : GCALS,
+    !AG_CACHE[key] ? fetch(`${GCAL_URL}?events=1&days=${days}&from=${from}`, { headers: authHeaders() }).then((r) => r.json()).catch(() => null) : AG_CACHE[key],
   ]);
-  GCALS = cals; AGEV = evs;
+  if (cals) GCALS = cals;
+  if (evs) AG_CACHE[key] = evs;
+  AGEV = AG_CACHE[key] || null;
+}
+
+const AG_DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const agHourH = 44;
+const evColor = (e) => e.color || 'var(--accent)';
+
+function agEventPop(e) {
+  const ini = e.all_day ? 'dia todo' : new Date(e.start).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const fim = e.all_day || !e.end ? '' : new Date(e.end).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const txt = `${e.summary}\n${ini}${fim ? ' – ' + fim : ''}${e.calendar ? '\n📅 ' + e.calendar : ''}${e.location ? '\n📍 ' + e.location : ''}\n\nOK = fechar · Cancelar = APAGAR o evento`;
+  if (!confirm(txt)) {
+    if (!confirm(`Apagar "${e.summary}" do Google Calendar?`)) return;
+    fetch(`${GCAL_URL}?delete=1`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ id: e.id, cal_id: e.cal_id }) })
+      .then(() => loadAgendaG(true)).then(() => { if (TAB === 'agendag') render(); });
+  }
+}
+
+async function agQuickCreate(prefIso) {
+  const summary = prompt('Título do evento:');
+  if (!summary || !summary.trim()) return;
+  const quando = prompt('Quando? (AAAA-MM-DD HH:MM, ou só a data pra dia inteiro)', prefIso || '');
+  if (!quando) return;
+  const m = quando.trim().match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?$/);
+  if (!m) { alert('formato: AAAA-MM-DD ou AAAA-MM-DD HH:MM'); return; }
+  const start = m[2] ? `${m[1]}T${m[2]}:00-03:00` : m[1];
+  const r = await fetch(`${GCAL_URL}?create=1`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ summary: summary.trim(), start }) });
+  const b = await r.json();
+  if (!r.ok) { alert(b.error || 'erro ao criar'); return; }
+  await loadAgendaG(true);
+  if (TAB === 'agendag') render();
+}
+
+function agWeekHTML(evs) {
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(AG_START + 'T12:00:00');
+    d.setDate(d.getDate() + i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  const hoje = todayISO();
+  const byDay = {};
+  for (const e of evs) {
+    const d = String(e.start || '').slice(0, 10);
+    (byDay[d] = byDay[d] || []).push(e);
+  }
+  const head = days.map((d) => {
+    const dt = new Date(d + 'T12:00:00');
+    return `<div class="gc-h ${d === hoje ? 'today' : ''}"><span>${AG_DIAS[dt.getDay()]}</span><b>${dt.getDate()}</b></div>`;
+  }).join('');
+  const alldayRow = days.map((d) => `<div class="gc-ad" data-day="${d}">${(byDay[d] || []).filter((e) => e.all_day).map((e) =>
+    `<div class="gc-adev" data-ev="${esc(e.id)}" style="background:${evColor(e)}">${esc(e.summary)}</div>`).join('')}</div>`).join('');
+  const hours = Array.from({ length: 24 }, (_, h) => `<div class="gc-hour">${String(h).padStart(2, '0')}h</div>`).join('');
+  const cols = days.map((d) => {
+    const evd = (byDay[d] || []).filter((e) => !e.all_day);
+    const blocks = evd.map((e) => {
+      const st = new Date(e.start);
+      const en = e.end ? new Date(e.end) : new Date(st.getTime() + 3600000);
+      const top = (st.getHours() * 60 + st.getMinutes()) / 60 * agHourH;
+      const h = Math.max(22, (en - st) / 3600000 * agHourH - 2);
+      const hora = st.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      return `<div class="gc-ev" data-ev="${esc(e.id)}" style="top:${top}px;height:${h}px;background:${evColor(e)}"><b>${hora}</b> ${esc(e.summary)}</div>`;
+    }).join('');
+    const nowline = d === hoje ? `<div class="gc-now" style="top:${(new Date().getHours() * 60 + new Date().getMinutes()) / 60 * agHourH}px"></div>` : '';
+    return `<div class="gc-col ${d === hoje ? 'today' : ''}" data-day="${d}">${blocks}${nowline}</div>`;
+  }).join('');
+  return `
+    <div class="gc-headrow"><div class="gc-gut"></div>${head}</div>
+    <div class="gc-adrow"><div class="gc-gut dim" style="font-size:10px;display:flex;align-items:center;justify-content:center">dia<br>todo</div>${alldayRow}</div>
+    <div class="gc-scroll" id="gc-scroll">
+      <div class="gc-grid" style="height:${24 * agHourH}px">
+        <div class="gc-hours">${hours}</div>
+        ${cols}
+      </div>
+    </div>`;
+}
+
+function agListHTML(evs) {
+  const porDia = {};
+  for (const e of evs) { const d = String(e.start || '').slice(0, 10); (porDia[d] = porDia[d] || []).push(e); }
+  const dias = Object.keys(porDia).sort();
+  const fmtDia = (iso) => {
+    const d = new Date(iso + 'T12:00:00');
+    const nome = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+    return iso === todayISO() ? `HOJE · ${nome}` : nome;
+  };
+  const fmtHora = (e) => e.all_day ? 'dia todo' : new Date(e.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  return dias.length ? dias.map((d) => `<div class="ag-day"><h4>${fmtDia(d)}</h4>
+    ${porDia[d].map((e) => `<div class="ag-ev" data-ev="${esc(e.id)}"><span class="ag-dot" style="background:${evColor(e)}"></span><span class="ag-hora">${fmtHora(e)}</span>
+      <span class="ag-tit">${esc(e.summary)}</span>
+      ${e.calendar ? `<span class="ag-calchip">${esc(e.calendar)}</span>` : ''}
+      ${e.location ? `<span class="dim">📍 ${esc(e.location)}</span>` : ''}</div>`).join('')}
+  </div>`).join('') : '<div class="empty">nada nos próximos 21 dias nos calendários marcados 🎉</div>';
 }
 
 function renderAgendaG(main) {
@@ -1877,69 +2046,80 @@ function renderAgendaG(main) {
 
   const cals = (GCALS.calendars || []);
   const evs = (AGEV.events || []);
-  const porDia = {};
-  for (const e of evs) {
-    const d = String(e.start || '').slice(0, 10);
-    (porDia[d] = porDia[d] || []).push(e);
-  }
-  const dias = Object.keys(porDia).sort();
-  const fmtDia = (iso) => {
-    const d = new Date(iso + 'T12:00:00');
-    const nome = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
-    return iso === todayISO() ? `HOJE · ${nome}` : nome;
-  };
-  const fmtHora = (e) => e.all_day ? 'dia todo' : new Date(e.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const wkStart = new Date(AG_START + 'T12:00:00');
+  const wkEnd = new Date(wkStart); wkEnd.setDate(wkEnd.getDate() + 6);
+  const rotulo = AG_MODE === 'semana'
+    ? `${wkStart.getDate()} – ${wkEnd.getDate()} de ${wkEnd.toLocaleDateString('pt-BR', { month: 'long' })}`
+    : 'próximos 21 dias';
 
   main.innerHTML = `<div class="ag-wrap">
     <aside class="ag-side">
-      <h3>📅 Meus calendários</h3>
+      <button class="btn primary" id="ag-new" style="width:100%;margin-bottom:12px">＋ Criar evento</button>
+      <h3>Meus calendários</h3>
       ${cals.map((c) => `<label class="ag-cal"><input type="checkbox" value="${esc(c.id)}" ${c.selected ? 'checked' : ''}>
-        <span class="ag-dot" style="background:${esc(c.color || 'var(--accent)')}"></span>${esc(c.name)}${c.primary ? ' <span class="dim">(principal)</span>' : ''}</label>`).join('')}
-      <div class="muted-note" style="margin-top:10px">marque o que deve aparecer — vale pro painel e pro IAGO</div>
+        <span class="ag-dot" style="background:${esc(c.color || 'var(--accent)')}"></span><span class="ag-nome">${esc(c.name)}</span></label>`).join('')}
+      <div class="muted-note" style="margin-top:10px">o que marcar aqui vale pro painel e pro IAGO</div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-top:16px">
-        <button class="btn small" id="ag-new">＋ novo evento</button>
-        <button class="btn small" id="ag-swap">⇄ trocar conta</button>
+        <button class="btn small" id="ag-swap">⇄ trocar conta Google</button>
         <button class="btn small" id="ag-off">desconectar</button>
       </div>
     </aside>
     <section class="ag-main">
-      ${dias.length ? dias.map((d) => `<div class="ag-day"><h4>${fmtDia(d)}</h4>
-        ${porDia[d].map((e) => `<div class="ag-ev"><span class="ag-hora">${fmtHora(e)}</span>
-          <span class="ag-tit">${esc(e.summary)}</span>
-          ${e.calendar ? `<span class="ag-calchip">${esc(e.calendar)}</span>` : ''}
-          ${e.location ? `<span class="dim">📍 ${esc(e.location)}</span>` : ''}</div>`).join('')}
-      </div>`).join('') : '<div class="empty">nada nos próximos 21 dias nos calendários marcados 🎉</div>'}
+      <div class="gc-top">
+        <button class="btn small" id="gc-prev">‹</button>
+        <button class="btn small" id="gc-today">Hoje</button>
+        <button class="btn small" id="gc-next">›</button>
+        <b class="gc-rotulo">${rotulo}</b>
+        <span class="spacer" style="flex:1"></span>
+        <nav class="gc-mode">
+          <button class="${AG_MODE === 'semana' ? 'active' : ''}" data-agmode="semana">Semana</button>
+          <button class="${AG_MODE === 'lista' ? 'active' : ''}" data-agmode="lista">Lista</button>
+        </nav>
+      </div>
+      ${AG_MODE === 'semana' ? agWeekHTML(evs) : agListHTML(evs)}
     </section>
   </div>`;
 
+  // binds
   main.querySelectorAll('.ag-cal input').forEach((cb) => cb.onchange = async () => {
     const ids = [...main.querySelectorAll('.ag-cal input:checked')].map((x) => x.value);
     await fetch(`${GCAL_URL}?calendars=1`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ ids }) });
+    GCALS = null; GCAL = null;
     await loadAgendaG(true);
-    GCAL = null; // força recarga do card da Hoje também
     if (TAB === 'agendag') renderAgendaG(main);
   });
   $('#ag-swap').onclick = gcalSwap;
   $('#ag-off').onclick = async () => {
     if (!confirm('Desconectar seu Google Calendar?')) return;
     await fetch(`${GCAL_URL}?disconnect=1`, { method: 'POST', headers: authHeaders() });
-    GCAL = { connected: false, events: [] }; GCALS = null; AGEV = null;
+    GCAL = { connected: false, events: [] }; GCALS = null; AGEV = null; AG_CACHE = {};
     renderAgendaG(main);
   };
-  $('#ag-new').onclick = async () => {
-    const summary = prompt('Título do evento:');
-    if (!summary || !summary.trim()) return;
-    const quando = prompt('Quando? (ex: 2026-08-22 15:00 — ou só 2026-08-22 pra dia inteiro)');
-    if (!quando) return;
-    const m = quando.trim().match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}))?$/);
-    if (!m) { alert('formato: AAAA-MM-DD ou AAAA-MM-DD HH:MM'); return; }
-    const start = m[2] ? `${m[1]}T${m[2]}:00-03:00` : m[1];
-    const r = await fetch(`${GCAL_URL}?create=1`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ summary: summary.trim(), start }) });
-    const b2 = await r.json();
-    if (!r.ok) { alert(b2.error || 'erro ao criar'); return; }
-    await loadAgendaG(true);
-    if (TAB === 'agendag') renderAgendaG(main);
-  };
+  $('#ag-new').onclick = () => agQuickCreate(todayISO() + ' 09:00');
+  $('#gc-prev').onclick = async () => { const d = new Date(AG_START + 'T12:00:00'); d.setDate(d.getDate() - 7); AG_START = d.toISOString().slice(0, 10); AGEV = null; await loadAgendaG(); renderAgendaG(main); };
+  $('#gc-next').onclick = async () => { const d = new Date(AG_START + 'T12:00:00'); d.setDate(d.getDate() + 7); AG_START = d.toISOString().slice(0, 10); AGEV = null; await loadAgendaG(); renderAgendaG(main); };
+  $('#gc-today').onclick = async () => { AG_START = agWeekStart(new Date()); AGEV = null; await loadAgendaG(); renderAgendaG(main); };
+  main.querySelectorAll('[data-agmode]').forEach((b) => b.onclick = async () => {
+    AG_MODE = b.dataset.agmode; localStorage.setItem('iago_agmode', AG_MODE);
+    AGEV = null; await loadAgendaG(); renderAgendaG(main);
+  });
+  // clique em evento
+  main.querySelectorAll('[data-ev]').forEach((el) => el.addEventListener('click', (e2) => {
+    e2.stopPropagation();
+    const ev = evs.find((x) => x.id === el.dataset.ev);
+    if (ev) agEventPop(ev);
+  }));
+  // clique em horario vazio cria evento naquele dia/hora
+  main.querySelectorAll('.gc-col').forEach((col) => col.addEventListener('click', (e2) => {
+    if (e2.target.closest('.gc-ev')) return;
+    const rect = col.getBoundingClientRect();
+    const hora = Math.floor((e2.clientY - rect.top + $('#gc-scroll').scrollTop * 0) / agHourH);
+    const h = Math.max(0, Math.min(23, Math.floor((e2.clientY - rect.top) / agHourH)));
+    agQuickCreate(`${col.dataset.day} ${String(h).padStart(2, '0')}:00`);
+  }));
+  // rolar até 07h
+  const sc = $('#gc-scroll');
+  if (sc) sc.scrollTop = 7 * agHourH;
 }
 
 /* ================= login / settings / modo privado ================= */
