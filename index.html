@@ -444,6 +444,16 @@
   .wp-nome { min-width: 46px; text-transform: capitalize; font-weight: 600; }
   .wp-tmax { font-weight: 700; }
 
+  /* ===== telas super-wide (32" ultrawide): usa a largura de verdade ===== */
+  @media (min-width: 1900px) {
+    .home-wrap { max-width: 1780px; }
+    .h2-kpi { min-width: 200px; padding: 16px 22px; }
+    .h2-kpiv { font-size: 23px; }
+    .em-wrap { max-width: 1500px; }
+    .pj-wrap { max-width: 1680px; }
+    .home-grid { gap: 16px; }
+  }
+
   /* ===== agenda estilo Google Calendar ===== */
   .gc-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
   .gc-rotulo { font-size: 15px; text-transform: capitalize; margin-left: 6px; }
@@ -1610,14 +1620,15 @@ function homeHTML() {
   const kpis = [];
   if (dlr) kpis.push({ k: 'Dólar', v: 'R$ ' + Number(dlr.bid).toFixed(2), sub: `<span class="${pct >= 0 ? 'h-up' : 'h-down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct).toFixed(2)}%</span>` });
   const sb = HOME.sby;
+  const FG = 'https://fg-bay.vercel.app';
   if (sb && (sb.fech_anterior || sb.vendas_mes != null)) {
-    if (sb.vendas_mes != null) kpis.push({ k: `Vendas SBY ${sb.mes_atual || ''}`, v: fmtBRL(sb.vendas_mes), sub: 'mês corrente', sby: 1 });
-    if (sb.fech_anterior) kpis.push({ k: `Faturamento ${String(sb.fech_anterior.mes).padStart(2, '0')}/${sb.fech_anterior.ano}`, v: fmtBRL(sb.fech_anterior.total_faturamento), sub: 'último fechamento', sby: 1 });
-    if (sb.caixa) kpis.push({ k: 'Caixa SBY', v: fmtBRL(sb.caixa.saldo_total), sub: 'saldo em ' + new Date(sb.caixa.data + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), sby: 1 });
-    if (sb.a_receber != null && Number(sb.a_receber) > 0) kpis.push({ k: 'A receber', v: fmtBRL(sb.a_receber), sub: 'em aberto', sby: 1 });
-    if (sb.inadimplencia != null) kpis.push({ k: 'Inadimplência', v: fmtBRL(sb.inadimplencia), sub: 'SBY', sby: 1, late: 1 });
+    if (sb.vendas_mes != null) kpis.push({ k: `Vendas SBY ${sb.mes_atual || ''}`, v: fmtBRL(sb.vendas_mes), sub: 'mês corrente', url: `${FG}/` });
+    if (sb.fech_anterior) kpis.push({ k: `Faturamento ${String(sb.fech_anterior.mes).padStart(2, '0')}/${sb.fech_anterior.ano}`, v: fmtBRL(sb.fech_anterior.total_faturamento), sub: 'último fechamento', url: `${FG}/mes/${sb.fech_anterior.ano}/${sb.fech_anterior.mes}` });
+    if (sb.caixa) kpis.push({ k: 'Caixa SBY', v: fmtBRL(sb.caixa.saldo_total), sub: 'saldo em ' + new Date(sb.caixa.data + 'T12:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), url: `${FG}/financeiro/fluxo-de-caixa` });
+    if (sb.a_receber != null && Number(sb.a_receber) > 0) kpis.push({ k: 'A receber', v: fmtBRL(sb.a_receber), sub: 'em aberto', url: `${FG}/financeiro/contas-a-receber` });
+    if (sb.inadimplencia != null) kpis.push({ k: 'Inadimplência', v: fmtBRL(sb.inadimplencia), sub: 'SBY', url: `${FG}/financeiro/inadimplencia`, late: 1 });
   }
-  const kpiHTML = kpis.map((x) => `<div class="h2-kpi ${x.sby ? 'sby' : ''}" ${x.sby ? 'data-sby="1"' : ''}>
+  const kpiHTML = kpis.map((x) => `<div class="h2-kpi ${x.url ? 'sby' : ''}" ${x.url ? `data-sby-url="${esc(x.url)}"` : ''}>
     <span class="h2-kpik">${esc(x.k)}</span><span class="h2-kpiv ${x.late ? 'late' : ''}">${x.v}</span><span class="h2-kpis">${x.sub || ''}</span></div>`).join('');
 
   // --- agenda de hoje/amanhã (clicável) ---
@@ -1707,7 +1718,10 @@ function bindHome(main) {
   if (goag) goag.onclick = () => { TAB = 'agendag'; render(); };
   const gotasks = main.querySelector('#h2-gotasks');
   if (gotasks) gotasks.onclick = () => { TAB = 'projetos'; render(); };
-  main.querySelectorAll('[data-sby]').forEach((el) => el.onclick = () => window.open('https://fg-bay.vercel.app', '_blank'));
+  main.querySelectorAll('[data-sby-url]').forEach((el) => el.onclick = () => {
+    const tk = TOKEN || '';
+    window.open(el.dataset.sbyUrl + (tk ? `#iago=${tk}` : ''), '_blank');
+  });
   main.querySelectorAll('[data-hev]').forEach((el) => el.addEventListener('click', () => {
     const e = (GCAL?.events || []).find((x) => x.id === el.dataset.hev);
     if (!e) return;
